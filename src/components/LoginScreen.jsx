@@ -3,8 +3,8 @@ import { Lock, Mail, Key, ShieldCheck, Eye, EyeOff, Building2 } from 'lucide-rea
 import { loginUser } from '../db/storage';
 
 export const LoginScreen = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('studioaliston@gmail.com');
-  const [password, setPassword] = useState('pdmmay2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -181,19 +181,6 @@ export const LoginScreen = ({ onLoginSuccess }) => {
             {loading ? 'Authenticating...' : 'Login to ALISTON ERP'}
           </button>
         </form>
-
-        {/* Demo Credentials Box */}
-        <div style={{
-          backgroundColor: 'rgba(229, 185, 92, 0.05)',
-          borderTop: '1px solid var(--border-color)',
-          padding: '12px 20px',
-          fontSize: '0.75rem',
-          color: 'var(--text-secondary)',
-          textAlign: 'center'
-        }}>
-          <div>Default Admin ID: <strong style={{ color: 'var(--text-primary)' }}>studioaliston@gmail.com</strong></div>
-          <div>Default Password: <strong style={{ color: 'var(--text-primary)' }}>pdmmay2026</strong></div>
-        </div>
       </div>
     </div>
   );

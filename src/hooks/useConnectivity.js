@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { syncWithServerDB } from '../db/storage';
 
 export const checkServerHealth = async () => {
   if (!navigator.onLine) return false;
@@ -32,6 +33,10 @@ export const useConnectivity = () => {
     const reachable = await checkServerHealth();
     setIsOnline(reachable);
     setIsChecking(false);
+    if (reachable) {
+      // Sync latest server state so any change by any user is reflected live across all active devices
+      syncWithServerDB();
+    }
     return reachable;
   }, []);
 

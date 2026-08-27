@@ -39,19 +39,27 @@ const STORAGE_KEYS = {
   AUTH: 'aliston_auth_session'
 };
 
-// Sync whole DB from server
+// Sync whole DB from server and notify listeners if data changed
 export const syncWithServerDB = async () => {
   try {
     const res = await fetch('/api/db');
     if (res.ok) {
       const { db } = await res.json();
       if (db) {
+        let hasChanges = false;
         Object.keys(db).forEach(key => {
           if (STORAGE_KEYS[key]) {
-            localStorage.setItem(STORAGE_KEYS[key], JSON.stringify(db[key]));
+            const currentRaw = localStorage.getItem(STORAGE_KEYS[key]);
+            const newRaw = JSON.stringify(db[key]);
+            if (currentRaw !== newRaw) {
+              localStorage.setItem(STORAGE_KEYS[key], newRaw);
+              hasChanges = true;
+            }
           }
         });
-        window.dispatchEvent(new CustomEvent('aliston-db-updated', { detail: { key: 'ALL' } }));
+        if (hasChanges) {
+          window.dispatchEvent(new CustomEvent('aliston-db-updated', { detail: { key: 'ALL' } }));
+        }
         return db;
       }
     }

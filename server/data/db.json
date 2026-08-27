@@ -22,7 +22,7 @@
     "allowNegativeStock": true,
     "minStockThreshold": 10,
     "tallyTheme": "dark",
-    "invoiceSeq": 1001
+    "invoiceSeq": 1002
   },
   "USERS": [
     {
@@ -30,6 +30,13 @@
       "email": "studioaliston@gmail.com",
       "password": "pdmmay2026",
       "name": "Aliston Studio Admin",
+      "role": "Administrator"
+    },
+    {
+      "id": "user-2",
+      "email": "studioaliston2@gmail.com",
+      "password": "pdmmay2026",
+      "name": "Aliston Studio Admin 2",
       "role": "Administrator"
     }
   ],
@@ -70,16 +77,313 @@
       "code": "OTH"
     }
   ],
-  "SUPPLIERS": [],
-  "CUSTOMERS": [],
-  "MATERIALS": [],
-  "PRODUCTS": [],
+  "SUPPLIERS": [
+    {
+      "id": "sup-1787844659338",
+      "name": "shree sai fashion",
+      "contact": "Contact Person",
+      "phone": "",
+      "email": "",
+      "gstin": "UNREGISTERED",
+      "city": "Surat"
+    }
+  ],
+  "CUSTOMERS": [
+    {
+      "id": "cust-1787845657286",
+      "name": "ansh",
+      "company": "niil",
+      "phone": "9725337949",
+      "gstin": "efjnfanfjasdfladad",
+      "address": "Surat, Gujarat",
+      "state": "Gujarat"
+    }
+  ],
+  "MATERIALS": [
+    {
+      "id": "mat-1787844659340",
+      "name": "linen shirting",
+      "category": "Fabric",
+      "rate": 235,
+      "unit": "metre",
+      "currentStock": 220,
+      "minStock": 50
+    }
+  ],
+  "PRODUCTS": [
+    {
+      "id": "prod-1787845172434",
+      "name": "linen shirts",
+      "code": "1008",
+      "sku": "AL-LIN-ITEM-101",
+      "barcode": "8901234567101",
+      "category": "Casual Shirt",
+      "subCategory": "Formal Linen",
+      "fabric": "Linen Pure 60 Lea",
+      "fabricColor": "Royal blue",
+      "design": "xyz",
+      "pattern": "Plain Cutaway",
+      "season": "Summer 2026",
+      "supplierId": "sup-1787844659338",
+      "purchaseDate": "2026-08-27",
+      "costPrice": 520,
+      "marginPercent": 40,
+      "sellingPrice": 728,
+      "hsnCode": "620520",
+      "gstPercent": 5,
+      "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&auto=format&fit=crop&q=60",
+      "remarks": "",
+      "finalSellingPrice": 764.4
+    }
+  ],
   "BOMS": {},
-  "STOCK": [],
-  "STOCK_TRANSACTIONS": [],
-  "PURCHASES": [],
+  "STOCK": [
+    {
+      "productId": "",
+      "productName": "Garment Item",
+      "color": "Royal Blue",
+      "fabric": "Fabric",
+      "sizes": {
+        "S": 0,
+        "M": 10,
+        "L": 0,
+        "XL": 0,
+        "XXL": 0,
+        "XXXL": 0
+      },
+      "total": 10
+    },
+    {
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "fabric": "Linen Pure 60 Lea",
+      "sizes": {
+        "S": 0,
+        "M": -1,
+        "L": -1,
+        "XL": -1,
+        "XXL": -1,
+        "XXXL": -1
+      },
+      "total": -5
+    }
+  ],
+  "STOCK_TRANSACTIONS": [
+    {
+      "id": "stx-1787845657286-828",
+      "timestamp": "2026-08-27T15:47:37.286Z",
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "size": "XXXL",
+      "transactionType": "SALES_INVOICE",
+      "refNo": "2",
+      "changeQty": -1,
+      "previousQty": 0,
+      "newQty": -1,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "Sales Invoice to ansh"
+    },
+    {
+      "id": "stx-1787845657286-408",
+      "timestamp": "2026-08-27T15:47:37.286Z",
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "size": "XXL",
+      "transactionType": "SALES_INVOICE",
+      "refNo": "2",
+      "changeQty": -1,
+      "previousQty": 0,
+      "newQty": -1,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "Sales Invoice to ansh"
+    },
+    {
+      "id": "stx-1787845657286-784",
+      "timestamp": "2026-08-27T15:47:37.286Z",
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "size": "XL",
+      "transactionType": "SALES_INVOICE",
+      "refNo": "2",
+      "changeQty": -1,
+      "previousQty": 0,
+      "newQty": -1,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "Sales Invoice to ansh"
+    },
+    {
+      "id": "stx-1787845657286-265",
+      "timestamp": "2026-08-27T15:47:37.286Z",
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "size": "L",
+      "transactionType": "SALES_INVOICE",
+      "refNo": "2",
+      "changeQty": -1,
+      "previousQty": 0,
+      "newQty": -1,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "Sales Invoice to ansh"
+    },
+    {
+      "id": "stx-1787845657286-614",
+      "timestamp": "2026-08-27T15:47:37.286Z",
+      "productId": "prod-1787845172434",
+      "productName": "linen shirts",
+      "color": "Royal blue",
+      "size": "M",
+      "transactionType": "SALES_INVOICE",
+      "refNo": "2",
+      "changeQty": -1,
+      "previousQty": 0,
+      "newQty": -1,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "Sales Invoice to ansh"
+    },
+    {
+      "id": "stx-1787844881123-519",
+      "timestamp": "2026-08-27T15:34:41.123Z",
+      "productId": "",
+      "productName": "Garment Item",
+      "color": "Royal Blue",
+      "size": "M",
+      "transactionType": "PURCHASE",
+      "refNo": "1008",
+      "changeQty": 10,
+      "previousQty": 0,
+      "newQty": 10,
+      "createdBy": "studioaliston@gmail.com",
+      "remarks": "linen shirts"
+    }
+  ],
+  "PURCHASES": [
+    {
+      "id": "pur-1787844659342",
+      "purchaseNo": "PUR-2026-001",
+      "date": "2026-08-27",
+      "supplierId": "NEW",
+      "supplierName": "shree sai fashion",
+      "materialId": "mat-1787844659340",
+      "material": "linen shirting",
+      "quantity": 220,
+      "unit": "metre",
+      "rate": 235,
+      "gstPercent": 5,
+      "subtotal": 51700,
+      "gstAmount": 2585,
+      "grandTotal": 54285,
+      "paymentStatus": "Pending",
+      "notes": "Bulk material purchase"
+    }
+  ],
   "PRODUCTIONS": [],
-  "INVOICES": [],
+  "INVOICES": [
+    {
+      "id": "inv-1787845657286",
+      "invoiceNo": "2",
+      "date": "2026-08-27",
+      "customerId": "",
+      "customerName": "ansh",
+      "companyName": "niil",
+      "customerAddress": "Surat, Gujarat",
+      "customerGST": "efjnfanfjasdfladad",
+      "mobile": "9725337949",
+      "paymentMode": "Cash",
+      "notes": "Thank you for your business with ALISTON.",
+      "items": [
+        {
+          "productId": "prod-1787845172434",
+          "color": "Royal blue",
+          "size": "M",
+          "qty": 1,
+          "rate": 728,
+          "discountPercent": 0,
+          "gstPercent": 5,
+          "productName": "linen shirts",
+          "code": "1008",
+          "hsn": "620520",
+          "taxableAmt": 728,
+          "gstAmt": 36.4,
+          "totalAmt": 764.4
+        },
+        {
+          "productId": "prod-1787845172434",
+          "color": "Royal blue",
+          "size": "L",
+          "qty": 1,
+          "rate": 728,
+          "discountPercent": 0,
+          "gstPercent": 12,
+          "productName": "linen shirts",
+          "code": "1008",
+          "hsn": "620520",
+          "taxableAmt": 728,
+          "gstAmt": 87.36,
+          "totalAmt": 815.36
+        },
+        {
+          "productId": "prod-1787845172434",
+          "color": "Royal blue",
+          "size": "XL",
+          "qty": 1,
+          "rate": 728,
+          "discountPercent": 0,
+          "gstPercent": 12,
+          "productName": "linen shirts",
+          "code": "1008",
+          "hsn": "620520",
+          "taxableAmt": 728,
+          "gstAmt": 87.36,
+          "totalAmt": 815.36
+        },
+        {
+          "productId": "prod-1787845172434",
+          "color": "Royal blue",
+          "size": "XXL",
+          "qty": 1,
+          "rate": 728,
+          "discountPercent": 0,
+          "gstPercent": 12,
+          "productName": "linen shirts",
+          "code": "1008",
+          "hsn": "620520",
+          "taxableAmt": 728,
+          "gstAmt": 87.36,
+          "totalAmt": 815.36
+        },
+        {
+          "productId": "prod-1787845172434",
+          "color": "Royal blue",
+          "size": "XXXL",
+          "qty": 1,
+          "rate": 728,
+          "discountPercent": 0,
+          "gstPercent": 12,
+          "productName": "linen shirts",
+          "code": "1008",
+          "hsn": "620520",
+          "taxableAmt": 728,
+          "gstAmt": 87.36,
+          "totalAmt": 815.36
+        }
+      ],
+      "subtotal": 3640,
+      "taxableTotal": 3640,
+      "cgst": 192.92,
+      "sgst": 192.92,
+      "igst": 0,
+      "roundOff": 0.16,
+      "grandTotal": 4026,
+      "amountInWords": "Four Thousand and Twenty  Six Rupees Only",
+      "status": "SAVED",
+      "createdAt": "2026-08-27T15:47:37.286Z"
+    }
+  ],
   "RETURNS": [],
   "EXPENSES": []
 }

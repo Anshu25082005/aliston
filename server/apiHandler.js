@@ -41,10 +41,23 @@ export const handleApiRequest = async (req, res) => {
   // 2. Auth API: Login
   if (url === '/api/auth/login' && method === 'POST') {
     const db = readDB();
-    const { email, password, remember } = body;
+    const cleanEmail = (body.email || '').trim().toLowerCase();
+    const cleanPassword = (body.password || '').trim();
+    const remember = body.remember;
+
     const users = db.USERS || [];
-    const found = users.find(u => u.email.toLowerCase() === (email || '').toLowerCase() && u.password === password);
-    
+    let found = users.find(u => u.email.toLowerCase() === cleanEmail && u.password === cleanPassword);
+
+    // Fallback: If studioaliston2@gmail.com or studioaliston@gmail.com with pdmmay2026
+    if (!found && (cleanEmail === 'studioaliston@gmail.com' || cleanEmail === 'studioaliston2@gmail.com') && cleanPassword === 'pdmmay2026') {
+      found = {
+        id: 'user-admin',
+        email: cleanEmail,
+        name: 'Aliston Studio Admin',
+        role: 'Administrator'
+      };
+    }
+
     if (found) {
       const session = {
         id: found.id,

@@ -34,6 +34,13 @@ export const INITIAL_USERS = [
     password: 'pdmmay2026',
     name: 'Aliston Studio Admin',
     role: 'Administrator'
+  },
+  {
+    id: 'user-2',
+    email: 'studioaliston2@gmail.com',
+    password: 'pdmmay2026',
+    name: 'Aliston Studio Admin 2',
+    role: 'Administrator'
   }
 ];
 

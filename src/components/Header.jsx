@@ -86,23 +86,19 @@ export const Header = ({
     }}>
       {/* Brand & Tally Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #e5b95c 0%, #b45309 100%)',
-          color: '#090d12',
-          width: '36px',
-          height: '36px',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: '800',
-          fontSize: '1.2rem',
-          fontFamily: 'var(--font-heading)',
-          boxShadow: '0 0 10px rgba(229, 185, 92, 0.3)',
-          flexShrink: 0
-        }}>
-          A
-        </div>
+        <img 
+          src="/aliston-logo.jpg" 
+          alt="ALISTON Logo" 
+          style={{
+            height: '44px',
+            objectFit: 'contain',
+            borderRadius: '6px',
+            boxShadow: '0 0 10px rgba(229, 185, 92, 0.25)',
+            backgroundColor: '#ffffff',
+            padding: '2px 6px',
+            flexShrink: 0
+          }}
+        />
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', lineHeight: 1.1 }}>
             <h1 style={{ fontSize: '1.1rem', fontWeight: '800', letterSpacing: '0.5px', color: 'var(--text-primary)', margin: 0 }}>

@@ -61,21 +61,16 @@ export const InvoicePdfModal = ({ invoice, companyDetails = INITIAL_COMPANY_DETA
           {/* Header Grid */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '20px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  backgroundColor: '#002b36',
-                  color: '#e5b95c',
-                  fontWeight: '800',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.4rem'
-                }}>
-                  A
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
+                <img 
+                  src="/aliston-logo.jpg" 
+                  alt="ALISTON Logo" 
+                  style={{
+                    height: '65px',
+                    objectFit: 'contain',
+                    borderRadius: '4px'
+                  }}
+                />
                 <div>
                   <h1 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#002b36', margin: 0, letterSpacing: '0.5px' }}>
                     {companyDetails.name}

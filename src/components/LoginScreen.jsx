@@ -56,23 +56,19 @@ export const LoginScreen = ({ onLoginSuccess }) => {
           padding: '24px',
           textAlign: 'center'
         }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #e5b95c 0%, #b45309 100%)',
-            color: '#090d12',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2rem',
-            fontWeight: '800',
-            marginBottom: '12px',
-            fontFamily: 'var(--font-heading)',
-            boxShadow: '0 0 20px rgba(229, 185, 92, 0.4)'
-          }}>
-            A
-          </div>
+          <img 
+            src="/aliston-logo.jpg" 
+            alt="ALISTON Logo" 
+            style={{
+              height: '80px',
+              objectFit: 'contain',
+              borderRadius: '8px',
+              marginBottom: '12px',
+              backgroundColor: '#ffffff',
+              padding: '4px 10px',
+              boxShadow: '0 0 20px rgba(229, 185, 92, 0.4)'
+            }}
+          />
           <h2 style={{ fontSize: '1.5rem', color: '#ffffff', letterSpacing: '1px', fontWeight: '800' }}>
             ALISTON ERP
           </h2>

@@ -19,7 +19,7 @@
     ]
   },
   "SETTINGS": {
-    "allowNegativeStock": false,
+    "allowNegativeStock": true,
     "minStockThreshold": 10,
     "tallyTheme": "dark",
     "invoiceSeq": 1001

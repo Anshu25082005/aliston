@@ -82,7 +82,7 @@ export const Header = ({
       flexShrink: 0,
       zIndex: 1000,
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'visible'
     }}>
       {/* Brand & Tally Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -268,13 +268,13 @@ export const Header = ({
             <div style={{
               position: 'absolute',
               right: 0,
-              top: '40px',
-              width: '220px',
+              top: '42px',
+              width: '230px',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-md)',
-              zIndex: 200,
+              borderRadius: '8px',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.7)',
+              zIndex: 99999,
               padding: '8px 0'
             }}>
               <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-color)' }}>

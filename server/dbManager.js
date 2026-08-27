@@ -5,6 +5,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE_PATH = path.join(__dirname, 'data', 'db.json');
+const TMP_DB_PATH = path.join('/tmp', 'aliston_db.json');
+
+// Memory DB cache for Vercel serverless functions
+let memoryDb = null;
 
 // Default initial database state
 const INITIAL_DB = {
@@ -28,7 +32,7 @@ const INITIAL_DB = {
     ]
   },
   SETTINGS: {
-    allowNegativeStock: false,
+    allowNegativeStock: true,
     minStockThreshold: 10,
     tallyTheme: 'dark',
     invoiceSeq: 1001
@@ -39,6 +43,13 @@ const INITIAL_DB = {
       email: 'studioaliston@gmail.com',
       password: 'pdmmay2026',
       name: 'Aliston Studio Admin',
+      role: 'Administrator'
+    },
+    {
+      id: 'user-2',
+      email: 'studioaliston2@gmail.com',
+      password: 'pdmmay2026',
+      name: 'Aliston Studio Admin 2',
       role: 'Administrator'
     }
   ],
@@ -67,40 +78,72 @@ const INITIAL_DB = {
 
 // Ensure data directory exists
 const ensureDataDir = () => {
-  const dir = path.join(__dirname, 'data');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    const dir = path.join(__dirname, 'data');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (e) {
+    // Read-only on serverless
   }
 };
 
 // Read Database
 export const readDB = () => {
+  if (memoryDb) {
+    return memoryDb;
+  }
+
+  // 1. Try /tmp/aliston_db.json (Serverless writable cache)
+  try {
+    if (fs.existsSync(TMP_DB_PATH)) {
+      const raw = fs.readFileSync(TMP_DB_PATH, 'utf-8');
+      memoryDb = JSON.parse(raw);
+      return memoryDb;
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  // 2. Try disk db.json
   try {
     ensureDataDir();
-    if (!fs.existsSync(DB_FILE_PATH)) {
-      writeDB(INITIAL_DB);
-      return INITIAL_DB;
+    if (fs.existsSync(DB_FILE_PATH)) {
+      const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
+      memoryDb = JSON.parse(raw);
+      return memoryDb;
     }
-    const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-    return JSON.parse(raw);
   } catch (err) {
     console.error('Error reading server DB:', err);
-    return INITIAL_DB;
   }
+
+  memoryDb = INITIAL_DB;
+  return memoryDb;
 };
 
 // Write Database
 export const writeDB = (data) => {
+  memoryDb = data;
+  
+  // 1. Write to /tmp/aliston_db.json
+  try {
+    fs.writeFileSync(TMP_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    // Ignore error
+  }
+
+  // 2. Write to disk db.json if writable
   try {
     ensureDataDir();
     fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Error writing server DB:', err);
+    // Expected on Vercel read-only filesystem
   }
 };
 
 // Reset Database
 export const resetDB = () => {
+  memoryDb = INITIAL_DB;
   writeDB(INITIAL_DB);
   return INITIAL_DB;
 };

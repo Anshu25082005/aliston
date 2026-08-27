@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scissors, Search, Plus, Filter, AlertTriangle } from 'lucide-react';
+import { Scissors, Search, Plus, Filter, AlertTriangle, Trash2 } from 'lucide-react';
 import { getData, saveData } from '../db/storage';
 import { exportToExcel } from '../utils/excelExporter';
 
@@ -46,6 +46,14 @@ export const MaterialInventoryView = () => {
     setMaterials(updated);
     saveData('MATERIALS', updated);
     setShowAddModal(false);
+  };
+
+  const handleDeleteMaterial = (id) => {
+    if (confirm('Are you sure you want to delete this raw material item?')) {
+      const updated = materials.filter(m => m.id !== id);
+      setMaterials(updated);
+      saveData('MATERIALS', updated);
+    }
   };
 
   const handleExport = () => {
@@ -138,6 +146,7 @@ export const MaterialInventoryView = () => {
               <th>Min Reorder Stock</th>
               <th>Stock Value (₹)</th>
               <th>Status</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -163,6 +172,16 @@ export const MaterialInventoryView = () => {
                     ) : (
                       <span className="badge badge-green">IN STOCK</span>
                     )}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleDeleteMaterial(m.id)}
+                      title="Delete Raw Material"
+                      style={{ color: '#f85149', padding: '4px 8px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </td>
                 </tr>
               );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, Plus, Search, Calendar, Filter } from 'lucide-react';
+import { DollarSign, Plus, Search, Calendar, Filter, Trash2 } from 'lucide-react';
 import { getData, saveData } from '../db/storage';
 import { exportToExcel } from '../utils/excelExporter';
 
@@ -44,6 +44,14 @@ export const ExpenseView = () => {
     setExpenses(updated);
     saveData('EXPENSES', updated);
     setShowModal(false);
+  };
+
+  const handleDeleteExpense = (id) => {
+    if (confirm('Are you sure you want to delete this expense record?')) {
+      const updated = expenses.filter(e => e.id !== id);
+      setExpenses(updated);
+      saveData('EXPENSES', updated);
+    }
   };
 
   const handleExport = () => {
@@ -130,6 +138,7 @@ export const ExpenseView = () => {
               <th>Description / Remarks</th>
               <th>Payment Mode</th>
               <th>Amount (₹)</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -144,6 +153,16 @@ export const ExpenseView = () => {
                 <td style={{ fontWeight: '600' }}>{exp.description}</td>
                 <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{exp.paymentMode}</td>
                 <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>₹{exp.amount?.toFixed(2)}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button 
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => handleDeleteExpense(exp.id)}
+                    title="Delete Expense Record"
+                    style={{ color: '#f85149', padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

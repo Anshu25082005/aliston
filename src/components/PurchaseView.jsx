@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Plus, Search, Calendar, FileText, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, Plus, Search, Calendar, FileText, CheckCircle2, Trash2 } from 'lucide-react';
 import { getData, saveData, updateRawMaterialStock } from '../db/storage';
 
 export const PurchaseView = () => {
@@ -20,6 +20,14 @@ export const PurchaseView = () => {
     window.addEventListener('aliston-db-updated', handleDbUpdate);
     return () => window.removeEventListener('aliston-db-updated', handleDbUpdate);
   }, []);
+
+  const handleDeletePurchase = (id) => {
+    if (confirm('Are you sure you want to delete this purchase entry?')) {
+      const updated = purchases.filter(p => p.id !== id);
+      setPurchases(updated);
+      saveData('PURCHASES', updated);
+    }
+  };
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -205,12 +213,13 @@ export const PurchaseView = () => {
               <th>Grand Total</th>
               <th>Status</th>
               <th>Notes</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredPurchases.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                   No purchase entries recorded yet. Click "New Purchase Bill Entry" to record your raw material purchase.
                 </td>
               </tr>
@@ -227,6 +236,16 @@ export const PurchaseView = () => {
                   <td className="mono" style={{ fontWeight: '800', color: '#3fb950' }}>₹{pur.grandTotal?.toFixed(2)}</td>
                   <td><span className="badge badge-green">{pur.paymentStatus}</span></td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pur.notes}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleDeletePurchase(pur.id)}
+                      title="Delete Purchase Entry"
+                      style={{ color: '#f85149', padding: '4px 8px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}

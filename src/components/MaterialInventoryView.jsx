@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scissors, Search, Plus, Filter, AlertTriangle, Trash2 } from 'lucide-react';
+import { Scissors, Search, Plus, Filter, AlertTriangle, Trash2, Edit } from 'lucide-react';
 import { getData, saveData } from '../db/storage';
 import { exportToExcel } from '../utils/excelExporter';
 
@@ -24,6 +24,7 @@ export const MaterialInventoryView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState(null);
 
   const [newMaterial, setNewMaterial] = useState({
     name: '',
@@ -36,16 +37,51 @@ export const MaterialInventoryView = () => {
 
   const categories = ['Fabric', 'Button', 'Collar', 'Cuff', 'Label', 'Thread', 'Packing Material', 'Other'];
 
+  const handleOpenAddModal = () => {
+    setEditingMaterial(null);
+    setNewMaterial({
+      name: '',
+      category: 'Fabric',
+      rate: 300,
+      unit: 'metre',
+      currentStock: 500,
+      minStock: 100
+    });
+    setShowAddModal(true);
+  };
+
+  const handleEditMaterial = (m) => {
+    setEditingMaterial(m);
+    setNewMaterial({
+      name: m.name || '',
+      category: m.category || 'Fabric',
+      rate: m.rate || 0,
+      unit: m.unit || 'metre',
+      currentStock: m.currentStock || 0,
+      minStock: m.minStock || 0
+    });
+    setShowAddModal(true);
+  };
+
   const handleAddMaterial = (e) => {
     e.preventDefault();
-    const newEntry = {
-      id: 'mat-' + Date.now(),
-      ...newMaterial
-    };
-    const updated = [...materials, newEntry];
+    let updated;
+    if (editingMaterial) {
+      updated = materials.map(m => m.id === editingMaterial.id ? {
+        ...m,
+        ...newMaterial
+      } : m);
+    } else {
+      const newEntry = {
+        id: 'mat-' + Date.now(),
+        ...newMaterial
+      };
+      updated = [...materials, newEntry];
+    }
     setMaterials(updated);
     saveData('MATERIALS', updated);
     setShowAddModal(false);
+    setEditingMaterial(null);
   };
 
   const handleDeleteMaterial = (id) => {
@@ -92,7 +128,7 @@ export const MaterialInventoryView = () => {
           <button className="btn btn-secondary" onClick={handleExport}>
             Export Inventory Excel
           </button>
-          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+          <button className="btn btn-primary" onClick={handleOpenAddModal}>
             <Plus size={16} /> Add Raw Material Master
           </button>
         </div>
@@ -174,14 +210,24 @@ export const MaterialInventoryView = () => {
                     )}
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleDeleteMaterial(m.id)}
-                      title="Delete Raw Material"
-                      style={{ color: '#f85149', padding: '4px 8px' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleEditMaterial(m)}
+                        title="Edit Raw Material Master"
+                        style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteMaterial(m.id)}
+                        title="Delete Raw Material"
+                        style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

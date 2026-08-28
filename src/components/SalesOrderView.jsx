@@ -12,6 +12,7 @@ import {
   Clock, 
   Truck, 
   Trash2, 
+  Edit,
   ArrowRight,
   User,
   MapPin,
@@ -187,6 +188,57 @@ export const SalesOrderView = () => {
   const grandTotalAmount = subTotalAmount + calculatedGst;
   const balanceDueAmount = Math.max(0, grandTotalAmount - advanceAmount);
 
+  const [editingOrder, setEditingOrder] = useState(null);
+
+  const handleOpenNewModal = () => {
+    setEditingOrder(null);
+    setSalespersonName('Rahul Sharma (Sales Rep)');
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerCity('');
+    setAdvanceAmount(5000);
+    setPaymentMode('UPI / Bank Transfer');
+    setFixedDiscountPercent(40);
+    setAdditionalDiscountPercent(10);
+    setNotes('Festive bulk order - ALISTON Premium Box Packaging');
+    setOrderItems([
+      {
+        productId: products[0]?.id || 'p-1',
+        productName: products[0]?.name || 'Linen Formal Shirt',
+        fabric: products[0]?.fabric || 'Linen Pure 60 Lea',
+        color: products[0]?.fabricColor || 'Royal Blue',
+        sizeQty: { S: 5, M: 15, L: 20, XL: 10, '2XL': 5, '3XL': 0 },
+        rate: products[0]?.sellingPrice || 950
+      }
+    ]);
+    setShowOrderModal(true);
+  };
+
+  const handleEditOrder = (order) => {
+    setEditingOrder(order);
+    setSalespersonName(order.salesperson || '');
+    setDeliveryDate(order.deliveryDate || '');
+    setCustomerName(order.customerName || '');
+    setCustomerPhone(order.customerPhone || '');
+    setCustomerCity(order.customerCity || '');
+    setAdvanceAmount(order.advanceAmount || 0);
+    setPaymentMode(order.paymentMode || 'UPI / Bank Transfer');
+    setFixedDiscountPercent(order.fixedDiscountPercent !== undefined ? order.fixedDiscountPercent : 40);
+    setAdditionalDiscountPercent(order.additionalDiscountPercent !== undefined ? order.additionalDiscountPercent : 10);
+    setNotes(order.notes || '');
+    if (order.items && order.items.length > 0) {
+      setOrderItems(order.items.map(it => ({
+        productId: it.productId || 'p-1',
+        productName: it.productName || '',
+        fabric: it.fabric || '',
+        color: it.color || '',
+        sizeQty: it.sizeQty || { S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 },
+        rate: it.rate || 0
+      })));
+    }
+    setShowOrderModal(true);
+  };
+
   const handleSaveOrder = (e) => {
     e.preventDefault();
     if (!customerName.trim()) {
@@ -198,39 +250,67 @@ export const SalesOrderView = () => {
       return;
     }
 
-    const nextOrderNo = 'SO/2026-27/' + (1000 + orders.length + 1);
-    const newOrder = {
-      id: 'so-' + Date.now(),
-      orderNo: nextOrderNo,
-      date: new Date().toISOString().split('T')[0],
-      deliveryDate,
-      salesperson: salespersonName,
-      customerName,
-      customerPhone,
-      customerCity,
-      items: processedItems,
-      totalQuantity: grandTotalQty,
-      grossMRPTotal,
-      fixedDiscountPercent,
-      totalFixedDisc,
-      additionalDiscountPercent,
-      totalAddDisc,
-      subTotal: subTotalAmount,
-      gstPercent,
-      gstAmount: calculatedGst,
-      grandTotal: grandTotalAmount,
-      advanceAmount: parseFloat(advanceAmount) || 0,
-      balanceAmount: balanceDueAmount,
-      paymentMode,
-      notes,
-      status: 'Pending',
-      convertedToInvoice: false
-    };
+    let updated;
+    if (editingOrder) {
+      updated = orders.map(o => o.id === editingOrder.id ? {
+        ...o,
+        deliveryDate,
+        salesperson: salespersonName,
+        customerName,
+        customerPhone,
+        customerCity,
+        items: processedItems,
+        totalQuantity: grandTotalQty,
+        grossMRPTotal,
+        fixedDiscountPercent,
+        totalFixedDisc,
+        additionalDiscountPercent,
+        totalAddDisc,
+        subTotal: subTotalAmount,
+        gstPercent,
+        gstAmount: calculatedGst,
+        grandTotal: grandTotalAmount,
+        advanceAmount: parseFloat(advanceAmount) || 0,
+        balanceAmount: balanceDueAmount,
+        paymentMode,
+        notes
+      } : o);
+    } else {
+      const nextOrderNo = 'SO/2026-27/' + (1000 + orders.length + 1);
+      const newOrder = {
+        id: 'so-' + Date.now(),
+        orderNo: nextOrderNo,
+        date: new Date().toISOString().split('T')[0],
+        deliveryDate,
+        salesperson: salespersonName,
+        customerName,
+        customerPhone,
+        customerCity,
+        items: processedItems,
+        totalQuantity: grandTotalQty,
+        grossMRPTotal,
+        fixedDiscountPercent,
+        totalFixedDisc,
+        additionalDiscountPercent,
+        totalAddDisc,
+        subTotal: subTotalAmount,
+        gstPercent,
+        gstAmount: calculatedGst,
+        grandTotal: grandTotalAmount,
+        advanceAmount: parseFloat(advanceAmount) || 0,
+        balanceAmount: balanceDueAmount,
+        paymentMode,
+        notes,
+        status: 'Pending',
+        convertedToInvoice: false
+      };
+      updated = [newOrder, ...orders];
+    }
 
-    const updated = [newOrder, ...orders];
     setOrders(updated);
     saveData('ORDERS', updated);
     setShowOrderModal(false);
+    setEditingOrder(null);
 
     // Reset Form
     setCustomerName('');
@@ -343,7 +423,7 @@ export const SalesOrderView = () => {
           <button className="btn btn-secondary" onClick={handleExportExcel}>
             Export Orders Excel
           </button>
-          <button className="btn btn-primary" onClick={() => setShowOrderModal(true)} style={{ backgroundColor: 'var(--accent-gold)', color: '#090d12', fontWeight: '800' }}>
+          <button className="btn btn-primary" onClick={handleOpenNewModal} style={{ backgroundColor: 'var(--accent-gold)', color: '#090d12', fontWeight: '800' }}>
             <Plus size={16} /> + Book New Sales Order
           </button>
         </div>
@@ -439,6 +519,14 @@ export const SalesOrderView = () => {
                   <tr key={order.id}>
                     <td style={{ textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleEditOrder(order)}
+                          title="Edit Sales Order Details"
+                          style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800' }}
+                        >
+                          <Edit size={14} />
+                        </button>
                         <button 
                           className="btn btn-secondary btn-sm"
                           onClick={() => { setSelectedOrder(order); setShowReceiptModal(true); }}

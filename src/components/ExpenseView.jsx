@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, Plus, Search, Calendar, Filter, Trash2 } from 'lucide-react';
+import { DollarSign, Plus, Search, Calendar, Filter, Trash2, Edit } from 'lucide-react';
 import { getData, saveData } from '../db/storage';
 import { exportToExcel } from '../utils/excelExporter';
 
@@ -16,6 +16,7 @@ export const ExpenseView = () => {
   }, []);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
 
@@ -33,17 +34,53 @@ export const ExpenseView = () => {
     paymentMode: 'Bank Transfer'
   });
 
+  const handleOpenModal = () => {
+    setEditingExpense(null);
+    setFormData({
+      category: 'Rent',
+      customCategory: '',
+      date: new Date().toISOString().split('T')[0],
+      amount: 5000,
+      description: 'Monthly office & warehouse maintenance',
+      paymentMode: 'Bank Transfer'
+    });
+    setShowModal(true);
+  };
+
+  const handleEditExpense = (exp) => {
+    setEditingExpense(exp);
+    setFormData({
+      category: exp.category || 'Rent',
+      customCategory: exp.customCategory || '',
+      date: exp.date || new Date().toISOString().split('T')[0],
+      amount: exp.amount || 0,
+      description: exp.description || '',
+      paymentMode: exp.paymentMode || 'Bank Transfer'
+    });
+    setShowModal(true);
+  };
+
   const handleAddExpense = (e) => {
     e.preventDefault();
-    const newExp = {
-      id: 'exp-' + Date.now(),
-      ...formData,
-      amount: parseFloat(formData.amount) || 0
-    };
-    const updated = [newExp, ...expenses];
+    let updated;
+    if (editingExpense) {
+      updated = expenses.map(exp => exp.id === editingExpense.id ? {
+        ...exp,
+        ...formData,
+        amount: parseFloat(formData.amount) || 0
+      } : exp);
+    } else {
+      const newExp = {
+        id: 'exp-' + Date.now(),
+        ...formData,
+        amount: parseFloat(formData.amount) || 0
+      };
+      updated = [newExp, ...expenses];
+    }
     setExpenses(updated);
     saveData('EXPENSES', updated);
     setShowModal(false);
+    setEditingExpense(null);
   };
 
   const handleDeleteExpense = (id) => {
@@ -88,7 +125,7 @@ export const ExpenseView = () => {
           <button className="btn btn-secondary" onClick={handleExport}>
             Export Expense Excel
           </button>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" onClick={handleOpenModal}>
             <Plus size={16} /> Record Expense
           </button>
         </div>
@@ -97,29 +134,29 @@ export const ExpenseView = () => {
       {/* Total Expense Banner */}
       <div className="card" style={{ padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #161b22 0%, #0d1117 100%)' }}>
         <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Recorded Operating Expenses</div>
-          <div className="mono" style={{ fontSize: '1.6rem', fontWeight: '800', color: '#ef4444' }}>
-            ₹{totalExpenseSum.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Operating Expenses Recorded</div>
+          <div className="mono" style={{ fontSize: '1.6rem', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>
+            ₹{totalExpensesAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
-        <div style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
-          {expenses.length} Expense Records
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Showing {filteredExpenses.length} expense entries
         </div>
       </div>
 
       {/* Filter Bar */}
       <div className="card" style={{ padding: '12px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '240px' }}>
           <Search size={16} color="var(--text-muted)" />
           <input 
             type="text" 
-            placeholder="Search by description or expense type..."
+            placeholder="Search description, category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: '100%' }}
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={16} color="var(--text-muted)" />
           <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
             <option value="ALL">All Categories</option>
@@ -154,14 +191,24 @@ export const ExpenseView = () => {
                 <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{exp.paymentMode}</td>
                 <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>₹{exp.amount?.toFixed(2)}</td>
                 <td style={{ textAlign: 'center' }}>
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => handleDeleteExpense(exp.id)}
-                    title="Delete Expense Record"
-                    style={{ color: '#f85149', padding: '4px 8px' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleEditExpense(exp)}
+                      title="Edit Expense Record"
+                      style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button 
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteExpense(exp.id)}
+                      title="Delete Expense Record"
+                      style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

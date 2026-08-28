@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { RotateCcw, Plus, Search, CheckCircle2 } from 'lucide-react';
-import { getData, saveSalesReturn } from '../db/storage';
+import { RotateCcw, Plus, Search, CheckCircle2, Trash2, Edit } from 'lucide-react';
+import { getData, saveData, saveSalesReturn } from '../db/storage';
 
 export const SalesReturnView = () => {
   const [returns, setReturns] = useState(() => getData('RETURNS') || []);
@@ -8,6 +8,7 @@ export const SalesReturnView = () => {
   const [products] = useState(() => getData('PRODUCTS') || []);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingReturn, setEditingReturn] = useState(null);
   const [selectedInvoiceNo, setSelectedInvoiceNo] = useState(invoices[0]?.invoiceNo || '');
   const [returnReason, setReturnReason] = useState('Size Fitting Exchange');
 
@@ -23,15 +24,69 @@ export const SalesReturnView = () => {
 
   const [feedback, setFeedback] = useState({ type: '', text: '' });
 
+  const handleOpenModal = () => {
+    setEditingReturn(null);
+    setSelectedInvoiceNo(invoices[0]?.invoiceNo || '');
+    setReturnReason('Size Fitting Exchange');
+    setReturnItems([
+      {
+        productId: products[0]?.id || '',
+        color: 'Royal Blue',
+        size: 'M',
+        qty: 2,
+        rate: products[0]?.sellingPrice || 1000
+      }
+    ]);
+    setShowModal(true);
+  };
+
+  const handleEditReturn = (ret) => {
+    setEditingReturn(ret);
+    setSelectedInvoiceNo(ret.invoiceNo || invoices[0]?.invoiceNo || '');
+    setReturnReason(ret.remarks || 'Size Fitting Exchange');
+    if (ret.items && ret.items.length > 0) {
+      setReturnItems(ret.items);
+    }
+    setShowModal(true);
+  };
+
+  const handleDeleteReturn = (id) => {
+    if (confirm('Are you sure you want to delete this sales return entry?')) {
+      const updated = returns.filter(r => r.id !== id);
+      setReturns(updated);
+      saveData('RETURNS', updated);
+    }
+  };
+
   const handleSaveReturn = (e) => {
     e.preventDefault();
     setFeedback({ type: '', text: '' });
 
     const inv = invoices.find(i => i.invoiceNo === selectedInvoiceNo);
-    const returnNo = `RET-${new Date().getFullYear()}-${String(returns.length + 1).padStart(3, '0')}`;
-
     const totalRefund = returnItems.reduce((sum, item) => sum + (item.qty * item.rate), 0);
 
+    if (editingReturn) {
+      const updated = returns.map(r => r.id === editingReturn.id ? {
+        ...r,
+        invoiceNo: selectedInvoiceNo,
+        customerId: inv?.customerId || r.customerId,
+        customerName: inv?.customerName || r.customerName,
+        items: returnItems.map(i => ({ ...i, reason: returnReason })),
+        totalRefund,
+        remarks: returnReason
+      } : r);
+      setReturns(updated);
+      saveData('RETURNS', updated);
+      setFeedback({ type: 'success', text: `Sales return ${editingReturn.returnNo} updated successfully!` });
+      setTimeout(() => {
+        setShowModal(false);
+        setFeedback({ type: '', text: '' });
+        setEditingReturn(null);
+      }, 1200);
+      return;
+    }
+
+    const returnNo = `RET-${new Date().getFullYear()}-${String(returns.length + 1).padStart(3, '0')}`;
     const payload = {
       returnNo,
       invoiceNo: selectedInvoiceNo,
@@ -65,7 +120,7 @@ export const SalesReturnView = () => {
             Process customer garment returns & automatically add returned size units back into stock
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={handleOpenModal}>
           <Plus size={16} /> + New Sales Return Entry
         </button>
       </div>
@@ -82,12 +137,13 @@ export const SalesReturnView = () => {
               <th>Returned Garments</th>
               <th>Total Refund</th>
               <th>Reason</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {returns.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                   No sales returns recorded yet.
                 </td>
               </tr>
@@ -107,6 +163,26 @@ export const SalesReturnView = () => {
                   </td>
                   <td className="mono" style={{ fontWeight: '800', color: '#f85149' }}>₹{ret.totalRefund?.toFixed(2)}</td>
                   <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{ret.remarks}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleEditReturn(ret)}
+                        title="Edit Sales Return Entry"
+                        style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteReturn(ret.id)}
+                        title="Delete Sales Return Entry"
+                        style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

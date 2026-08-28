@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Trash2, Printer, Eye, Search, CheckCircle2, AlertTriangle, UserPlus } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit, Printer, Eye, Search, CheckCircle2, AlertTriangle, UserPlus } from 'lucide-react';
 import { getData, saveSalesInvoice, saveData } from '../db/storage';
 import { InvoicePdfModal } from './InvoicePdfModal';
 import { numberToWords } from '../utils/numberToWords';
@@ -60,7 +60,10 @@ export const SalesInvoiceView = () => {
 
   const [formFeedback, setFormFeedback] = useState({ type: '', text: '' });
 
+  const [editingInvoice, setEditingInvoice] = useState(null);
+
   const handleOpenCreateModal = () => {
+    setEditingInvoice(null);
     const freshNextSeq = (settings.invoiceSeq || 1001);
     const freshInvoiceNo = `${companyDetails.invoicePrefix || 'AL/2026-27/'}${String(freshNextSeq).padStart(4, '0')}`;
     const firstCust = customers[0];
@@ -91,6 +94,34 @@ export const SalesInvoiceView = () => {
       }
     ]);
     setShowCreateModal(true);
+  };
+
+  const handleEditInvoice = (inv) => {
+    setEditingInvoice(inv);
+    setInvoiceForm({
+      invoiceNo: inv.invoiceNo,
+      date: inv.date || new Date().toISOString().split('T')[0],
+      customerId: inv.customerId || '',
+      customerName: inv.customerName || '',
+      companyName: inv.companyName || '',
+      customerAddress: inv.customerAddress || '',
+      customerGST: inv.customerGST || '',
+      mobile: inv.mobile || '',
+      paymentMode: inv.paymentMode || 'Bank Transfer (NEFT/RTGS)',
+      notes: inv.notes || 'Thank you for your business with ALISTON.'
+    });
+    if (inv.items && inv.items.length > 0) {
+      setLineItems(inv.items);
+    }
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteInvoice = (invoiceId) => {
+    if (confirm('Are you sure you want to permanently delete this sales invoice?')) {
+      const updated = invoices.filter(i => i.id !== invoiceId);
+      setInvoices(updated);
+      saveData('INVOICES', updated);
+    }
   };
 
   const handleCustomerChange = (custID) => {
@@ -218,6 +249,22 @@ export const SalesInvoiceView = () => {
       return;
     }
 
+    if (editingInvoice) {
+      const updated = invoices.map(i => i.id === editingInvoice.id ? {
+        ...i,
+        ...invoicePayload
+      } : i);
+      setInvoices(updated);
+      saveData('INVOICES', updated);
+      setFormFeedback({ type: 'success', text: `Invoice ${invoicePayload.invoiceNo} updated successfully!` });
+      setTimeout(() => {
+        setShowCreateModal(false);
+        setFormFeedback({ type: '', text: '' });
+        setEditingInvoice(null);
+      }, 1000);
+      return;
+    }
+
     const res = await saveSalesInvoice(invoicePayload);
     if (res.success) {
       setInvoices(getData('INVOICES') || []);
@@ -315,7 +362,13 @@ export const SalesInvoiceView = () => {
                   <td>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setSelectedInvoiceForPdf(inv)} title="View / Print PDF">
-                        <Eye size={14} /> View / Print
+                        <Eye size={14} /> View
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleEditInvoice(inv)} title="Edit Invoice Details" style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800' }}>
+                        <Edit size={14} /> Edit
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteInvoice(inv.id)} title="Delete Invoice" style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
                   </td>

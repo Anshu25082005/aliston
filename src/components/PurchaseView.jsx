@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Plus, Search, Calendar, FileText, CheckCircle2, Trash2 } from 'lucide-react';
+import { ShoppingBag, Plus, Search, Calendar, FileText, CheckCircle2, Trash2, Edit } from 'lucide-react';
 import { getData, saveData, updateRawMaterialStock } from '../db/storage';
 
 export const PurchaseView = () => {
@@ -8,6 +8,7 @@ export const PurchaseView = () => {
   const [materials, setMaterials] = useState(() => getData('MATERIALS') || []);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingPurchase, setEditingPurchase] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Real-time listener for DB updates
@@ -45,6 +46,7 @@ export const PurchaseView = () => {
   });
 
   const handleOpenModal = () => {
+    setEditingPurchase(null);
     setFormData({
       date: new Date().toISOString().split('T')[0],
       supplierId: suppliers[0]?.id || 'NEW',
@@ -58,6 +60,25 @@ export const PurchaseView = () => {
       discount: 0,
       paymentStatus: 'Paid',
       notes: 'Bulk material purchase'
+    });
+    setShowModal(true);
+  };
+
+  const handleEditPurchase = (pur) => {
+    setEditingPurchase(pur);
+    setFormData({
+      date: pur.date || new Date().toISOString().split('T')[0],
+      supplierId: pur.supplierId || 'NEW',
+      supplierName: pur.supplierName || '',
+      materialId: pur.materialId || '',
+      customMaterialName: pur.material || '',
+      quantity: pur.quantity || 0,
+      unit: pur.unit || 'metre',
+      rate: pur.rate || 0,
+      gstPercent: pur.gstPercent || 5,
+      discount: pur.discount || 0,
+      paymentStatus: pur.paymentStatus || 'Paid',
+      notes: pur.notes || ''
     });
     setShowModal(true);
   };
@@ -139,31 +160,52 @@ export const PurchaseView = () => {
       });
     }
 
-    const purchaseNo = `PUR-${new Date().getFullYear()}-${String(purchases.length + 1).padStart(3, '0')}`;
+    let updated;
+    if (editingPurchase) {
+      updated = purchases.map(p => p.id === editingPurchase.id ? {
+        ...p,
+        date: formData.date,
+        supplierId: formData.supplierId,
+        supplierName: finalSupplierName,
+        materialId: targetMatId,
+        material: finalMatName,
+        quantity: formData.quantity,
+        unit: formData.unit,
+        rate: formData.rate,
+        gstPercent: formData.gstPercent,
+        subtotal,
+        gstAmount,
+        grandTotal,
+        paymentStatus: formData.paymentStatus,
+        notes: formData.notes
+      } : p);
+    } else {
+      const purchaseNo = `PUR-${new Date().getFullYear()}-${String(purchases.length + 1).padStart(3, '0')}`;
+      const newPurchase = {
+        id: 'pur-' + Date.now(),
+        purchaseNo,
+        date: formData.date,
+        supplierId: formData.supplierId,
+        supplierName: finalSupplierName,
+        materialId: targetMatId,
+        material: finalMatName,
+        quantity: formData.quantity,
+        unit: formData.unit,
+        rate: formData.rate,
+        gstPercent: formData.gstPercent,
+        subtotal,
+        gstAmount,
+        grandTotal,
+        paymentStatus: formData.paymentStatus,
+        notes: formData.notes
+      };
+      updated = [newPurchase, ...purchases];
+    }
 
-    const newPurchase = {
-      id: 'pur-' + Date.now(),
-      purchaseNo,
-      date: formData.date,
-      supplierId: formData.supplierId,
-      supplierName: finalSupplierName,
-      materialId: targetMatId,
-      material: finalMatName,
-      quantity: formData.quantity,
-      unit: formData.unit,
-      rate: formData.rate,
-      gstPercent: formData.gstPercent,
-      subtotal,
-      gstAmount,
-      grandTotal,
-      paymentStatus: formData.paymentStatus,
-      notes: formData.notes
-    };
-
-    const updated = [newPurchase, ...purchases];
     setPurchases(updated);
     saveData('PURCHASES', updated);
     setShowModal(false);
+    setEditingPurchase(null);
   };
 
   const filteredPurchases = purchases.filter(p => 
@@ -237,14 +279,24 @@ export const PurchaseView = () => {
                   <td><span className="badge badge-green">{pur.paymentStatus}</span></td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pur.notes}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleDeletePurchase(pur.id)}
-                      title="Delete Purchase Entry"
-                      style={{ color: '#f85149', padding: '4px 8px' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleEditPurchase(pur)}
+                        title="Edit Purchase Entry"
+                        style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeletePurchase(pur.id)}
+                        title="Delete Purchase Entry"
+                        style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

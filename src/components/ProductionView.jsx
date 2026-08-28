@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Factory, Plus, CheckCircle2, Boxes, Scissors } from 'lucide-react';
-import { getData, processProductionEntry } from '../db/storage';
+import { Factory, Plus, CheckCircle2, Boxes, Scissors, Trash2, Edit } from 'lucide-react';
+import { getData, saveData, processProductionEntry } from '../db/storage';
 
 export const ProductionView = () => {
   const [productions, setProductions] = useState(() => getData('PRODUCTIONS') || []);
@@ -17,6 +17,7 @@ export const ProductionView = () => {
   }, []);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingProduction, setEditingProduction] = useState(null);
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
   const [color, setColor] = useState('Royal Blue');
   const [batchNo, setBatchNo] = useState(`BATCH-${new Date().getFullYear()}-01`);
@@ -28,6 +29,36 @@ export const ProductionView = () => {
 
   const [feedback, setFeedback] = useState({ type: '', text: '' });
 
+  const handleOpenModal = () => {
+    setEditingProduction(null);
+    setSelectedProductId(products[0]?.id || '');
+    setColor('Royal Blue');
+    setBatchNo(`BATCH-${new Date().getFullYear()}-01`);
+    setWorkerTailor('Master Artisan Tailors (Unit 3)');
+    setRemarks('Production completed & inspected');
+    setSizes({ S: 10, M: 20, L: 25, XL: 20, XXL: 15, XXXL: 10 });
+    setShowModal(true);
+  };
+
+  const handleEditProduction = (prd) => {
+    setEditingProduction(prd);
+    setSelectedProductId(prd.productId || products[0]?.id || '');
+    setColor(prd.color || '');
+    setBatchNo(prd.batchNo || '');
+    setWorkerTailor(prd.workerTailor || '');
+    setRemarks(prd.remarks || '');
+    setSizes(prd.sizeQuantities || { S: 0, M: 0, L: 0, XL: 0, XXL: 0, XXXL: 0 });
+    setShowModal(true);
+  };
+
+  const handleDeleteProduction = (id) => {
+    if (confirm('Are you sure you want to delete this production record?')) {
+      const updated = productions.filter(p => p.id !== id);
+      setProductions(updated);
+      saveData('PRODUCTIONS', updated);
+    }
+  };
+
   const selectedProduct = products.find(p => p.id === selectedProductId);
   const totalQty = Object.values(sizes).reduce((sum, v) => sum + (parseInt(v) || 0), 0);
 
@@ -37,6 +68,29 @@ export const ProductionView = () => {
 
     if (!navigator.onLine) {
       setFeedback({ type: 'error', text: 'Cannot record production while offline. Active server connection required.' });
+      return;
+    }
+
+    if (editingProduction) {
+      const updated = productions.map(p => p.id === editingProduction.id ? {
+        ...p,
+        productId: selectedProductId,
+        productName: selectedProduct ? selectedProduct.name : p.productName,
+        color,
+        sizeQuantities: sizes,
+        totalQty,
+        batchNo,
+        workerTailor,
+        remarks
+      } : p);
+      setProductions(updated);
+      saveData('PRODUCTIONS', updated);
+      setFeedback({ type: 'success', text: 'Production entry updated successfully!' });
+      setTimeout(() => {
+        setShowModal(false);
+        setFeedback({ type: '', text: '' });
+        setEditingProduction(null);
+      }, 1000);
       return;
     }
 
@@ -71,7 +125,7 @@ export const ProductionView = () => {
             Record finished garment manufacturing batches — automatically consumes raw material & adds size stock
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={handleOpenModal}>
           <Plus size={16} /> + Record Production Batch
         </button>
       </div>
@@ -90,12 +144,13 @@ export const ProductionView = () => {
               <th>Total Units Produced</th>
               <th>Tailor / Artisan</th>
               <th>Total Batch Cost</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {productions.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                   No production entries recorded yet.
                 </td>
               </tr>
@@ -113,6 +168,26 @@ export const ProductionView = () => {
                   <td className="mono" style={{ fontWeight: '800', color: '#38bdf8' }}>{prd.totalQty} pcs</td>
                   <td style={{ fontSize: '0.8rem' }}>{prd.workerTailor}</td>
                   <td className="mono" style={{ fontWeight: '800', color: '#3fb950' }}>₹{prd.totalProductionCost?.toFixed(2)}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleEditProduction(prd)}
+                        title="Edit Production Batch"
+                        style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteProduction(prd.id)}
+                        title="Delete Production Batch"
+                        style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

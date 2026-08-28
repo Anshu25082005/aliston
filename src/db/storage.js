@@ -16,7 +16,8 @@ import {
   INITIAL_PRODUCTIONS,
   INITIAL_INVOICES,
   INITIAL_RETURNS,
-  INITIAL_EXPENSES
+  INITIAL_EXPENSES,
+  INITIAL_ORDERS
 } from './initialData.js';
 
 const STORAGE_KEYS = {
@@ -36,6 +37,7 @@ const STORAGE_KEYS = {
   INVOICES: 'aliston_invoices',
   RETURNS: 'aliston_returns',
   EXPENSES: 'aliston_expenses',
+  ORDERS: 'aliston_orders',
   AUTH: 'aliston_auth_session'
 };
 

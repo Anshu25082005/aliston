@@ -66,3 +66,4 @@ export const INITIAL_PRODUCTIONS = [];
 export const INITIAL_INVOICES = [];
 export const INITIAL_RETURNS = [];
 export const INITIAL_EXPENSES = [];
+export const INITIAL_ORDERS = [];

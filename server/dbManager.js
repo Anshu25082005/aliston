@@ -73,7 +73,8 @@ const INITIAL_DB = {
   PRODUCTIONS: [],
   INVOICES: [],
   RETURNS: [],
-  EXPENSES: []
+  EXPENSES: [],
+  ORDERS: []
 };
 
 // Ensure data directory exists

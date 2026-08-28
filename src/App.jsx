@@ -13,6 +13,7 @@ import { PurchaseView } from './components/PurchaseView';
 import { MaterialInventoryView } from './components/MaterialInventoryView';
 import { ProductionView } from './components/ProductionView';
 import { SalesInvoiceView } from './components/SalesInvoiceView';
+import { SalesOrderView } from './components/SalesOrderView';
 import { SalesReturnView } from './components/SalesReturnView';
 import { ExpenseView } from './components/ExpenseView';
 import { ReportsView } from './components/ReportsView';
@@ -229,6 +230,10 @@ export default function App() {
 
           {activeTab === 'invoices' && (
             <SalesInvoiceView />
+          )}
+
+          {activeTab === 'sales-orders' && (
+            <SalesOrderView />
           )}
 
           {activeTab === 'returns' && (

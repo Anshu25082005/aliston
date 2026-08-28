@@ -12,7 +12,8 @@ import {
   DollarSign, 
   BarChart3, 
   Settings,
-  Layers
+  Layers,
+  ShoppingCart
 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab, lowStockCount = 0 }) => {
@@ -25,6 +26,7 @@ export const Sidebar = ({ activeTab, setActiveTab, lowStockCount = 0 }) => {
     { id: 'materials', label: 'Material Inventory', icon: Scissors, shortcut: 'F6' },
     { id: 'production', label: 'Production Entry', icon: Factory, shortcut: 'F7' },
     { id: 'invoices', label: 'Sales Invoices', icon: FileText, shortcut: 'F8' },
+    { id: 'sales-orders', label: 'Sales Orders', icon: ShoppingCart, shortcut: 'F8.5' },
     { id: 'returns', label: 'Sales Returns', icon: RotateCcw, shortcut: 'F9' },
     { id: 'expenses', label: 'Expenses', icon: DollarSign, shortcut: 'F10' },
     { id: 'reports', label: 'Reports Hub', icon: BarChart3, shortcut: 'F11' },

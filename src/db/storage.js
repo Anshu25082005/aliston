@@ -257,11 +257,25 @@ export const updatePassword = async (email, oldPassword, newPassword) => {
 // Reset database
 export const resetToInitialData = async () => {
   try {
+    const dataKeys = [
+      'SUPPLIERS', 'CUSTOMERS', 'MATERIALS', 'PRODUCTS', 'BOMS', 
+      'STOCK', 'STOCK_TRANSACTIONS', 'PURCHASES', 'PRODUCTIONS', 
+      'INVOICES', 'RETURNS', 'EXPENSES', 'ORDERS'
+    ];
+    dataKeys.forEach(k => {
+      if (STORAGE_KEYS[k]) {
+        localStorage.setItem(STORAGE_KEYS[k], k === 'BOMS' ? JSON.stringify({}) : JSON.stringify([]));
+      }
+      localStorage.removeItem(`aliston_deleted_${k}`);
+    });
+    clearDeletedIds();
+
     const res = await fetch('/api/reset', { method: 'POST' });
     if (res.ok) {
       await syncWithServerDB();
-      return { success: true };
     }
+    window.dispatchEvent(new CustomEvent('aliston-db-updated', { detail: { key: 'ALL' } }));
+    return { success: true };
   } catch (err) {
     console.warn('Reset failed:', err);
   }

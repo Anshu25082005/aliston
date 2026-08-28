@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Plus, Search, Calendar, FileText, CheckCircle2, Trash2, Edit } from 'lucide-react';
-import { getData, saveData, updateRawMaterialStock } from '../db/storage';
+import { getData, saveData, updateRawMaterialStock, markIdDeleted } from '../db/storage';
 
 export const PurchaseView = () => {
   const [purchases, setPurchases] = useState(() => getData('PURCHASES') || []);
@@ -276,7 +276,9 @@ export const PurchaseView = () => {
                   <td className="mono" style={{ fontWeight: '700' }}>{pur.quantity} {pur.unit}</td>
                   <td className="mono">₹{pur.rate}</td>
                   <td><span className="badge badge-blue">{pur.gstPercent}%</span></td>
-                  <td className="mono" style={{ fontWeight: '800', color: '#3fb950' }}>₹{pur.grandTotal?.toFixed(2)}</td>
+                  <td className="mono" style={{ fontWeight: '800', color: '#3fb950' }}>
+                    ₹{(parseFloat(pur.grandTotal) || 0).toFixed(2)}
+                  </td>
                   <td><span className="badge badge-green">{pur.paymentStatus}</span></td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pur.notes}</td>
                   <td style={{ textAlign: 'center' }}>
@@ -355,12 +357,30 @@ export const PurchaseView = () => {
 
                 <div>
                   <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Quantity Purchased ({formData.unit})</label>
-                  <input type="number" step="0.1" required style={{ width: '100%' }} value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })} />
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    required 
+                    style={{ width: '100%' }} 
+                    value={formData.quantity === 0 || formData.quantity === '0' ? '' : formData.quantity} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                  />
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Unit Rate (₹ per {formData.unit})</label>
-                  <input type="number" step="0.1" required style={{ width: '100%' }} value={formData.rate} onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })} />
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    required 
+                    style={{ width: '100%' }} 
+                    value={formData.rate === 0 || formData.rate === '0' ? '' : formData.rate} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setFormData({ ...formData, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                  />
                 </div>
 
                 <div>

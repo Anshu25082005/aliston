@@ -216,7 +216,7 @@ export const StockManagementView = () => {
                     <td><span className="badge badge-gold">{s.color}</span></td>
                     
                     {['S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(sz => {
-                      const qty = s.sizes?.[sz] || 0;
+                      const qty = Math.max(0, parseInt(s.sizes?.[sz]) || 0);
                       const isLow = qty < 10;
                       return (
                         <td key={sz} style={{ textAlign: 'center' }}>
@@ -243,7 +243,7 @@ export const StockManagementView = () => {
 
                     <td style={{ textAlign: 'center', backgroundColor: 'rgba(229, 185, 92, 0.05)' }}>
                       <span className="mono" style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--accent-gold)' }}>
-                        {s.total} pcs
+                        {Math.max(0, s.total || 0)} pcs
                       </span>
                     </td>
 
@@ -280,19 +280,22 @@ export const StockManagementView = () => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
-                {Object.entries(s.sizes || {}).map(([sz, qty]) => (
-                  <div key={sz} style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Size {sz}</div>
-                    <div className="mono" style={{ fontWeight: '800', fontSize: '0.9rem', color: qty < 10 ? '#f85149' : 'var(--text-primary)' }}>
-                      {qty}
+                {Object.entries(s.sizes || {}).map(([sz, qty]) => {
+                  const safeQty = Math.max(0, parseInt(qty) || 0);
+                  return (
+                    <div key={sz} style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Size {sz}</div>
+                      <div className="mono" style={{ fontWeight: '800', fontSize: '0.9rem', color: safeQty < 10 ? '#f85149' : 'var(--text-primary)' }}>
+                        {safeQty}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Color Stock:</span>
-                <span className="mono" style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--accent-gold)' }}>{s.total} pcs</span>
+                <span className="mono" style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--accent-gold)' }}>{Math.max(0, s.total || 0)} pcs</span>
               </div>
             </div>
           ))}
@@ -410,8 +413,10 @@ export const StockManagementView = () => {
                       required 
                       min="1"
                       style={{ width: '100%' }}
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                      value={quantity === 0 || quantity === '0' ? '' : quantity}
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setQuantity(e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     />
                   </div>
                   <div>

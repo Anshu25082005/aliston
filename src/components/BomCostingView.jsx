@@ -432,8 +432,10 @@ export const BomCostingView = () => {
                   type="number" 
                   step="0.1" 
                   style={{ width: '100%', fontWeight: '700' }} 
-                  value={fabric.rate} 
-                  onChange={(e) => setFabric({ ...fabric, rate: parseFloat(e.target.value) || 0 })} 
+                  value={fabric.rate === 0 || fabric.rate === '0' ? '' : fabric.rate} 
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setFabric({ ...fabric, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
                 />
               </div>
               <div>
@@ -442,8 +444,10 @@ export const BomCostingView = () => {
                   type="number" 
                   step="0.01" 
                   style={{ width: '100%', fontWeight: '700' }} 
-                  value={fabric.consumption} 
-                  onChange={(e) => setFabric({ ...fabric, consumption: parseFloat(e.target.value) || 0 })} 
+                  value={fabric.consumption === 0 || fabric.consumption === '0' ? '' : fabric.consumption} 
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setFabric({ ...fabric, consumption: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
                 />
               </div>
             </div>
@@ -474,8 +478,10 @@ export const BomCostingView = () => {
                   type="number" 
                   step="1" 
                   style={{ width: '100%', fontWeight: '700' }} 
-                  value={button.rate} 
-                  onChange={(e) => setButton({ ...button, rate: parseFloat(e.target.value) || 0 })} 
+                  value={button.rate === 0 || button.rate === '0' ? '' : button.rate} 
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setButton({ ...button, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
                 />
               </div>
               <div>
@@ -484,8 +490,10 @@ export const BomCostingView = () => {
                   type="number" 
                   step="0.001" 
                   style={{ width: '100%', fontWeight: '700' }} 
-                  value={button.quantity} 
-                  onChange={(e) => setButton({ ...button, quantity: parseFloat(e.target.value) || 0 })} 
+                  value={button.quantity === 0 || button.quantity === '0' ? '' : button.quantity} 
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setButton({ ...button, quantity: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
                 />
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                   ≈ {Math.round(button.quantity * 144)} buttons per shirt
@@ -508,7 +516,14 @@ export const BomCostingView = () => {
                 <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '8px' }}>Collar Interlining</div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input type="text" placeholder="Type" style={{ flex: 1 }} value={collar.type} onChange={(e) => setCollar({ ...collar, type: e.target.value })} />
-                  <input type="number" placeholder="Rate ₹" style={{ width: '100px', fontWeight: '700' }} value={collar.rate} onChange={(e) => setCollar({ ...collar, rate: parseFloat(e.target.value) || 0 })} />
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    style={{ width: '100px', fontWeight: '700' }} 
+                    value={collar.rate === 0 || collar.rate === '0' ? '' : collar.rate} 
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setCollar({ ...collar, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                  />
                 </div>
                 <div style={{ fontSize: '0.85rem', textAlign: 'right', marginTop: '8px', color: '#38bdf8', fontWeight: '700' }}>Cost: ₹{collarCost.toFixed(2)}</div>
               </div>
@@ -517,7 +532,14 @@ export const BomCostingView = () => {
                 <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '8px' }}>Cuff Interlining</div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input type="text" placeholder="Type" style={{ flex: 1 }} value={cuff.type} onChange={(e) => setCuff({ ...cuff, type: e.target.value })} />
-                  <input type="number" placeholder="Rate ₹" style={{ width: '100px', fontWeight: '700' }} value={cuff.rate} onChange={(e) => setCuff({ ...cuff, rate: parseFloat(e.target.value) || 0 })} />
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    style={{ width: '100px', fontWeight: '700' }} 
+                    value={cuff.rate === 0 || cuff.rate === '0' ? '' : cuff.rate} 
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setCuff({ ...cuff, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                  />
                 </div>
                 <div style={{ fontSize: '0.85rem', textAlign: 'right', marginTop: '8px', color: '#38bdf8', fontWeight: '700' }}>Cost: ₹{cuffCost.toFixed(2)}</div>
               </div>
@@ -544,9 +566,11 @@ export const BomCostingView = () => {
                     <input 
                       type="number" 
                       step="0.1" 
+                      placeholder="0"
                       style={{ width: '80px', padding: '4px 8px', fontSize: '0.8rem', fontWeight: '700' }} 
-                      value={lbl.rate} 
-                      onChange={(e) => setLabels({ ...labels, [key]: { ...lbl, rate: parseFloat(e.target.value) || 0 } })} 
+                      value={lbl.rate === 0 || lbl.rate === '0' ? '' : lbl.rate} 
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setLabels({ ...labels, [key]: { ...lbl, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 } })} 
                     />
                   </div>
                 </div>
@@ -581,21 +605,23 @@ export const BomCostingView = () => {
                 />
                 <input 
                   type="number" 
-                  placeholder="Rate ₹" 
+                  placeholder="0" 
                   style={{ width: '110px', fontWeight: '700' }} 
-                  value={om.rate} 
+                  value={om.rate === 0 || om.rate === '0' ? '' : om.rate} 
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
+                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
                     setOtherMaterials(otherMaterials.map(item => item.id === om.id ? { ...item, rate: val } : item));
                   }} 
                 />
                 <input 
                   type="number" 
-                  placeholder="Qty" 
+                  placeholder="0" 
                   style={{ width: '90px' }} 
-                  value={om.qty} 
+                  value={om.qty === 0 || om.qty === '0' ? '' : om.qty} 
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
+                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
                     setOtherMaterials(otherMaterials.map(item => item.id === om.id ? { ...item, qty: val } : item));
                   }} 
                 />
@@ -634,8 +660,10 @@ export const BomCostingView = () => {
                     type="number" 
                     step="0.5" 
                     style={{ width: '100%', marginTop: '6px', fontSize: '1rem', fontWeight: '700' }} 
-                    value={val} 
-                    onChange={(e) => setMfgExpenses({ ...mfgExpenses, [key]: parseFloat(e.target.value) || 0 })} 
+                    value={val === 0 || val === '0' ? '' : val} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setMfgExpenses({ ...mfgExpenses, [key]: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
                   />
                 </div>
               ))}
@@ -706,6 +734,7 @@ export const BomCostingView = () => {
                     placeholder="e.g. 1050" 
                     style={{ width: '100%', marginTop: '6px', fontSize: '1rem', fontWeight: '700' }} 
                     value={manualSellingPrice}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setManualSellingPrice(e.target.value)}
                   />
                 </div>

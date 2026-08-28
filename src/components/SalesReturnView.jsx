@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RotateCcw, Plus, Search, CheckCircle2, Trash2, Edit } from 'lucide-react';
-import { getData, saveData, saveSalesReturn } from '../db/storage';
+import { getData, saveData, saveSalesReturn, markIdDeleted } from '../db/storage';
 
 export const SalesReturnView = () => {
   const [returns, setReturns] = useState(() => getData('RETURNS') || []);
@@ -162,7 +162,9 @@ export const SalesReturnView = () => {
                       </span>
                     ))}
                   </td>
-                  <td className="mono" style={{ fontWeight: '800', color: '#f85149' }}>₹{ret.totalRefund?.toFixed(2)}</td>
+                  <td className="mono" style={{ fontWeight: '800', color: '#f85149' }}>
+                    ₹{(parseFloat(ret.totalRefund) || 0).toFixed(2)}
+                  </td>
                   <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{ret.remarks}</td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
@@ -229,7 +231,15 @@ export const SalesReturnView = () => {
                   </div>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Quantity Returned</label>
-                    <input type="number" min="1" style={{ width: '100%', fontWeight: '700' }} value={returnItems[0].qty} onChange={(e) => setReturnItems([{ ...returnItems[0], qty: parseInt(e.target.value) || 1 }])} />
+                    <input 
+                      type="number" 
+                      min="1" 
+                      style={{ width: '100%', fontWeight: '700' }} 
+                      value={returnItems[0].qty === 0 || returnItems[0].qty === '0' ? '' : returnItems[0].qty} 
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setReturnItems([{ ...returnItems[0], qty: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }])} 
+                    />
                   </div>
                 </div>
 

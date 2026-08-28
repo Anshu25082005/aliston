@@ -22,6 +22,45 @@ import { BackupSettingsView } from './components/BackupSettingsView';
 import { AlertOctagon, RefreshCw } from 'lucide-react';
 import './styles/index.css';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ALISTON ERP ErrorBoundary caught an error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '32px', textAlign: 'center' }}>
+          <div className="card" style={{ maxWidth: '520px', margin: '40px auto', border: '1px solid #da3633', background: 'var(--bg-card)' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#f85149', marginBottom: '10px' }}>
+              ⚠️ View Render Warning
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              An unexpected error occurred while rendering this section ({this.state.error?.message || 'Render Error'}).
+            </p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                if (this.props.onReset) this.props.onReset();
+              }}
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const { isOnline, isChecking, checkConnectionNow } = useConnectivity();
 
@@ -195,66 +234,68 @@ export default function App() {
         />
 
         <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', backgroundColor: 'var(--bg-main)', height: '100%' }}>
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              onNavigate={setActiveTab}
-              onOpenAddProduct={() => setActiveTab('products')}
-              onOpenAddStock={() => setActiveTab('stock')}
-              onOpenInvoice={() => setActiveTab('invoices')}
-            />
-          )}
+          <ErrorBoundary key={activeTab} onReset={() => setActiveTab('dashboard')}>
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                onNavigate={setActiveTab}
+                onOpenAddProduct={() => setActiveTab('products')}
+                onOpenAddStock={() => setActiveTab('stock')}
+                onOpenInvoice={() => setActiveTab('invoices')}
+              />
+            )}
 
-          {activeTab === 'products' && (
-            <ProductMasterView searchQuery={globalSearchQuery} />
-          )}
+            {activeTab === 'products' && (
+              <ProductMasterView searchQuery={globalSearchQuery} />
+            )}
 
-          {activeTab === 'bom' && (
-            <BomCostingView />
-          )}
+            {activeTab === 'bom' && (
+              <BomCostingView />
+            )}
 
-          {activeTab === 'stock' && (
-            <StockManagementView />
-          )}
+            {activeTab === 'stock' && (
+              <StockManagementView />
+            )}
 
-          {activeTab === 'purchases' && (
-            <PurchaseView />
-          )}
+            {activeTab === 'purchases' && (
+              <PurchaseView />
+            )}
 
-          {activeTab === 'materials' && (
-            <MaterialInventoryView />
-          )}
+            {activeTab === 'materials' && (
+              <MaterialInventoryView />
+            )}
 
-          {activeTab === 'production' && (
-            <ProductionView />
-          )}
+            {activeTab === 'production' && (
+              <ProductionView />
+            )}
 
-          {activeTab === 'invoices' && (
-            <SalesInvoiceView />
-          )}
+            {activeTab === 'invoices' && (
+              <SalesInvoiceView />
+            )}
 
-          {activeTab === 'sales-orders' && (
-            <SalesOrderView />
-          )}
+            {activeTab === 'sales-orders' && (
+              <SalesOrderView />
+            )}
 
-          {activeTab === 'returns' && (
-            <SalesReturnView />
-          )}
+            {activeTab === 'returns' && (
+              <SalesReturnView />
+            )}
 
-          {activeTab === 'expenses' && (
-            <ExpenseView />
-          )}
+            {activeTab === 'expenses' && (
+              <ExpenseView />
+            )}
 
-          {activeTab === 'reports' && (
-            <ReportsView />
-          )}
+            {activeTab === 'reports' && (
+              <ReportsView />
+            )}
 
-          {activeTab === 'settings' && (
-            <BackupSettingsView
-              onReloadData={() => setReloadCounter(prev => prev + 1)}
-              allowNegativeStock={allowNegativeStock}
-              onToggleNegativeStock={handleToggleNegativeStock}
-            />
-          )}
+            {activeTab === 'settings' && (
+              <BackupSettingsView
+                onReloadData={() => setReloadCounter(prev => prev + 1)}
+                allowNegativeStock={allowNegativeStock}
+                onToggleNegativeStock={handleToggleNegativeStock}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

@@ -384,9 +384,9 @@ export const SalesInvoiceView = () => {
                   <td>{inv.date}</td>
                   <td style={{ fontWeight: '600' }}>{inv.customerName}</td>
                   <td><span className="badge badge-blue">{inv.items?.length || 0} Items</span></td>
-                  <td className="mono">₹{inv.taxableTotal?.toFixed(2)}</td>
+                  <td className="mono">₹{(parseFloat(inv.taxableTotal) || 0).toFixed(2)}</td>
                   <td className="mono" style={{ fontSize: '0.8rem' }}>₹{((inv.cgst || 0) + (inv.sgst || 0) + (inv.igst || 0)).toFixed(2)}</td>
-                  <td className="mono" style={{ fontWeight: '800', color: '#3fb950', fontSize: '0.95rem' }}>₹{inv.grandTotal?.toFixed(2)}</td>
+                  <td className="mono" style={{ fontWeight: '800', color: '#3fb950', fontSize: '0.95rem' }}>₹{(parseFloat(inv.grandTotal) || 0).toFixed(2)}</td>
                   <td>
                     <span className={`badge ${inv.status === 'CANCELLED' ? 'badge-red' : 'badge-green'}`}>
                       {inv.status || 'SAVED'}
@@ -500,8 +500,10 @@ export const SalesInvoiceView = () => {
                         type="number"
                         min="0"
                         max="100"
-                        value={fixedDiscountPercent}
-                        onChange={(e) => setFixedDiscountPercent(parseFloat(e.target.value) || 0)}
+                        value={fixedDiscountPercent === 0 || fixedDiscountPercent === '0' ? '' : fixedDiscountPercent}
+                        placeholder="0"
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => setFixedDiscountPercent(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                         style={{ width: '80px', fontWeight: '800', textAlign: 'center', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}
                       />
                       <span style={{ fontWeight: '800', color: 'var(--accent-gold)', fontSize: '0.85rem' }}>% (Fixed)</span>
@@ -580,27 +582,50 @@ export const SalesInvoiceView = () => {
                           </div>
 
                           <div>
-                            <input type="number" min="1" placeholder="Qty" style={{ width: '100%', fontSize: '0.8rem', fontWeight: '700' }} value={item.qty} onChange={(e) => {
-                              const val = parseInt(e.target.value) || 1;
-                              setLineItems(lineItems.map((it, i) => i === idx ? { ...it, qty: val } : it));
-                            }} />
+                            <input 
+                              type="number" 
+                              min="1" 
+                              placeholder="Qty" 
+                              style={{ width: '100%', fontSize: '0.8rem', fontWeight: '700' }} 
+                              value={item.qty === 0 || item.qty === '0' ? '' : item.qty} 
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                                setLineItems(lineItems.map((it, i) => i === idx ? { ...it, qty: val } : it));
+                              }} 
+                            />
                             <div style={{ fontSize: '0.65rem', color: availSizeQty < item.qty ? '#f85149' : 'var(--text-muted)' }}>
                               Stk: {availSizeQty} pcs
                             </div>
                           </div>
 
                           <div>
-                            <input type="number" step="0.1" placeholder="Rate ₹" style={{ width: '100%', fontSize: '0.8rem' }} value={item.rate} onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 0;
-                              setLineItems(lineItems.map((it, i) => i === idx ? { ...it, rate: val } : it));
-                            }} />
+                            <input 
+                              type="number" 
+                              step="0.1" 
+                              placeholder="0" 
+                              style={{ width: '100%', fontSize: '0.8rem' }} 
+                              value={item.rate === 0 || item.rate === '0' ? '' : item.rate} 
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+                                setLineItems(lineItems.map((it, i) => i === idx ? { ...it, rate: val } : it));
+                              }} 
+                            />
                           </div>
 
                           <div>
-                            <input type="number" placeholder="Override %" style={{ width: '100%', fontSize: '0.8rem' }} value={item.discountPercent} onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 0;
-                              setLineItems(lineItems.map((it, i) => i === idx ? { ...it, discountPercent: val } : it));
-                            }} />
+                            <input 
+                              type="number" 
+                              placeholder="0" 
+                              style={{ width: '100%', fontSize: '0.8rem' }} 
+                              value={item.discountPercent === 0 || item.discountPercent === '0' ? '' : item.discountPercent} 
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+                                setLineItems(lineItems.map((it, i) => i === idx ? { ...it, discountPercent: val } : it));
+                              }} 
+                            />
                           </div>
 
                           <div className="mono" style={{ fontSize: '0.8rem', fontWeight: '700', color: '#3fb950', textAlign: 'right' }}>

@@ -406,7 +406,9 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                     step="0.01" 
                     required 
                     style={{ width: '100%' }}
-                    value={formData.costPrice} 
+                    value={formData.costPrice === 0 || formData.costPrice === '0' ? '' : formData.costPrice} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => handleCostOrMarginChange(e.target.value, formData.marginPercent)} 
                   />
                 </div>
@@ -418,7 +420,9 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                     step="0.1" 
                     required 
                     style={{ width: '100%' }}
-                    value={formData.marginPercent} 
+                    value={formData.marginPercent === 0 || formData.marginPercent === '0' ? '' : formData.marginPercent} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => handleCostOrMarginChange(formData.costPrice, e.target.value)} 
                   />
                 </div>
@@ -430,7 +434,9 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                     step="0.01" 
                     required 
                     style={{ width: '100%' }}
-                    value={formData.sellingPrice} 
+                    value={formData.sellingPrice === 0 || formData.sellingPrice === '0' ? '' : formData.sellingPrice} 
+                    placeholder="0"
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => handleSellingPriceChange(e.target.value)} 
                   />
                 </div>

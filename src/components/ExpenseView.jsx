@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, Plus, Search, Calendar, Filter, Trash2, Edit } from 'lucide-react';
-import { getData, saveData } from '../db/storage';
+import { getData, saveData, markIdDeleted } from '../db/storage';
 import { exportToExcel } from '../utils/excelExporter';
 
 export const ExpenseView = () => {
@@ -9,7 +9,8 @@ export const ExpenseView = () => {
   // Real-time listener for DB updates
   React.useEffect(() => {
     const handleDbUpdate = () => {
-      setExpenses(getData('EXPENSES') || []);
+      const data = getData('EXPENSES');
+      setExpenses(Array.isArray(data) ? data : []);
     };
     window.addEventListener('aliston-db-updated', handleDbUpdate);
     return () => window.removeEventListener('aliston-db-updated', handleDbUpdate);
@@ -48,12 +49,13 @@ export const ExpenseView = () => {
   };
 
   const handleEditExpense = (exp) => {
+    if (!exp) return;
     setEditingExpense(exp);
     setFormData({
       category: exp.category || 'Rent',
       customCategory: exp.customCategory || '',
       date: exp.date || new Date().toISOString().split('T')[0],
-      amount: exp.amount || 0,
+      amount: exp.amount !== undefined && exp.amount !== null ? exp.amount : 0,
       description: exp.description || '',
       paymentMode: exp.paymentMode || 'Bank Transfer'
     });
@@ -62,20 +64,23 @@ export const ExpenseView = () => {
 
   const handleAddExpense = (e) => {
     e.preventDefault();
+    const safeExpenses = Array.isArray(expenses) ? expenses : [];
+    const numAmount = parseFloat(formData.amount) || 0;
     let updated;
+
     if (editingExpense) {
-      updated = expenses.map(exp => exp.id === editingExpense.id ? {
+      updated = safeExpenses.map(exp => exp?.id === editingExpense.id ? {
         ...exp,
         ...formData,
-        amount: parseFloat(formData.amount) || 0
+        amount: numAmount
       } : exp);
     } else {
       const newExp = {
         id: 'exp-' + Date.now(),
         ...formData,
-        amount: parseFloat(formData.amount) || 0
+        amount: numAmount
       };
-      updated = [newExp, ...expenses];
+      updated = [newExp, ...safeExpenses];
     }
     setExpenses(updated);
     saveData('EXPENSES', updated);
@@ -86,32 +91,36 @@ export const ExpenseView = () => {
   const handleDeleteExpense = (id) => {
     if (confirm('Are you sure you want to delete this expense record?')) {
       markIdDeleted('EXPENSES', id);
-      const updated = expenses.filter(e => e.id !== id);
+      const safeExpenses = Array.isArray(expenses) ? expenses : [];
+      const updated = safeExpenses.filter(e => e?.id !== id);
       setExpenses(updated);
       saveData('EXPENSES', updated);
     }
   };
 
   const handleExport = () => {
-    const dataToExport = expenses.map(e => ({
-      'Date': e.date,
-      'Category': e.category === 'Other' && e.customCategory ? e.customCategory : e.category,
-      'Description': e.description,
-      'Amount (₹)': e.amount,
-      'Payment Mode': e.paymentMode
+    const safeExpenses = Array.isArray(expenses) ? expenses : [];
+    const dataToExport = safeExpenses.map(e => ({
+      'Date': e?.date || '',
+      'Category': e?.category === 'Other' && e?.customCategory ? e.customCategory : (e?.category || ''),
+      'Description': e?.description || '',
+      'Amount (₹)': parseFloat(e?.amount) || 0,
+      'Payment Mode': e?.paymentMode || ''
     }));
     exportToExcel(dataToExport, 'ALISTON_Expenses_Report.xlsx');
   };
 
-  const filteredExpenses = expenses.filter(e => {
+  const safeExpensesList = Array.isArray(expenses) ? expenses : [];
+  const filteredExpenses = safeExpensesList.filter(e => {
+    if (!e) return false;
     const catName = e.category === 'Other' && e.customCategory ? e.customCategory : e.category;
     const matchCat = filterCategory === 'ALL' || catName === filterCategory;
-    const matchSearch = e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        catName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = (e.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (catName || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
   });
 
-  const totalExpenseSum = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalExpensesAmount = safeExpensesList.reduce((sum, e) => sum + (parseFloat(e?.amount) || 0), 0);
 
   return (
     <div style={{ padding: '24px' }}>
@@ -180,39 +189,49 @@ export const ExpenseView = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredExpenses.map(exp => (
-              <tr key={exp.id}>
-                <td>{exp.date}</td>
-                <td>
-                  <span className="badge badge-gold">
-                    {exp.category === 'Other' && exp.customCategory ? exp.customCategory : exp.category}
-                  </span>
-                </td>
-                <td style={{ fontWeight: '600' }}>{exp.description}</td>
-                <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{exp.paymentMode}</td>
-                <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>₹{exp.amount?.toFixed(2)}</td>
-                <td style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleEditExpense(exp)}
-                      title="Edit Expense Record"
-                      style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button 
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteExpense(exp.id)}
-                      title="Delete Expense Record"
-                      style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+            {filteredExpenses.length === 0 ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  No operating expense entries recorded yet. Click "Record Expense" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredExpenses.map(exp => (
+                <tr key={exp.id || Math.random()}>
+                  <td>{exp.date || '-'}</td>
+                  <td>
+                    <span className="badge badge-gold">
+                      {exp.category === 'Other' && exp.customCategory ? exp.customCategory : (exp.category || 'Expense')}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: '600' }}>{exp.description || '-'}</td>
+                  <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{exp.paymentMode || 'Cash'}</td>
+                  <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>
+                    ₹{(parseFloat(exp.amount) || 0).toFixed(2)}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleEditExpense(exp)}
+                        title="Edit Expense Record"
+                        style={{ backgroundColor: 'var(--accent-gold)', color: '#000000', fontWeight: '800', padding: '4px 8px' }}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteExpense(exp.id)}
+                        title="Delete Expense Record"
+                        style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '4px 8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -222,7 +241,7 @@ export const ExpenseView = () => {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3>Record New Operating Expense</h3>
+              <h3>{editingExpense ? 'Edit Operating Expense' : 'Record New Operating Expense'}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', color: 'var(--text-muted)' }}>✕</button>
             </div>
             <form onSubmit={handleAddExpense}>
@@ -248,7 +267,16 @@ export const ExpenseView = () => {
                   </div>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Amount (₹)</label>
-                    <input type="number" step="0.1" required style={{ width: '100%', fontWeight: '700' }} value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} />
+                    <input 
+                      type="number" 
+                      step="0.1" 
+                      required 
+                      style={{ width: '100%', fontWeight: '700' }} 
+                      value={formData.amount === 0 || formData.amount === '0' ? '' : formData.amount} 
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                 </div>
 

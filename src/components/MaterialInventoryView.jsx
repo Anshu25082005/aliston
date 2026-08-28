@@ -260,7 +260,16 @@ export const MaterialInventoryView = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Unit Rate (₹)</label>
-                    <input type="number" step="0.1" required style={{ width: '100%' }} value={newMaterial.rate} onChange={(e) => setNewMaterial({ ...newMaterial, rate: parseFloat(e.target.value) || 0 })} />
+                    <input 
+                      type="number" 
+                      step="0.1" 
+                      required 
+                      style={{ width: '100%' }} 
+                      value={newMaterial.rate === 0 || newMaterial.rate === '0' ? '' : newMaterial.rate} 
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, rate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Unit Type</label>
@@ -270,11 +279,27 @@ export const MaterialInventoryView = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Opening Stock</label>
-                    <input type="number" required style={{ width: '100%' }} value={newMaterial.currentStock} onChange={(e) => setNewMaterial({ ...newMaterial, currentStock: parseFloat(e.target.value) || 0 })} />
+                    <input 
+                      type="number" 
+                      required 
+                      style={{ width: '100%' }} 
+                      value={newMaterial.currentStock === 0 || newMaterial.currentStock === '0' ? '' : newMaterial.currentStock} 
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, currentStock: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Min Reorder Level</label>
-                    <input type="number" required style={{ width: '100%' }} value={newMaterial.minStock} onChange={(e) => setNewMaterial({ ...newMaterial, minStock: parseFloat(e.target.value) || 0 })} />
+                    <input 
+                      type="number" 
+                      required 
+                      style={{ width: '100%' }} 
+                      value={newMaterial.minStock === 0 || newMaterial.minStock === '0' ? '' : newMaterial.minStock} 
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, minStock: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                 </div>
               </div>

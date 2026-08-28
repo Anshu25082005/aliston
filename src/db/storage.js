@@ -119,11 +119,38 @@ export const getData = (key) => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS[key.toUpperCase()]);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
+    let parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       const deletedIds = getDeletedIds(key);
       if (deletedIds.length > 0) {
-        return parsed.filter(item => item && item.id && !deletedIds.includes(item.id));
+        parsed = parsed.filter(item => item && item.id && !deletedIds.includes(item.id));
+      }
+
+      // Enforce zero minimum constraint on stock items
+      if (key.toUpperCase() === 'STOCK') {
+        let cleaned = false;
+        parsed.forEach(stockItem => {
+          if (stockItem && stockItem.sizes) {
+            Object.keys(stockItem.sizes).forEach(sz => {
+              const original = stockItem.sizes[sz];
+              const safe = Math.max(0, parseInt(original) || 0);
+              if (original !== safe) {
+                stockItem.sizes[sz] = safe;
+                cleaned = true;
+              }
+            });
+            const newTotal = Object.values(stockItem.sizes).reduce((sum, v) => sum + v, 0);
+            if (stockItem.total !== newTotal) {
+              stockItem.total = newTotal;
+              cleaned = true;
+            }
+          }
+        });
+        if (cleaned) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.STOCK, JSON.stringify(parsed));
+          } catch (e) {}
+        }
       }
     }
     return parsed;
@@ -273,17 +300,22 @@ export const updateFinishedStock = ({
     stockList.push(stockEntry);
   }
 
-  const currentSizeQty = stockEntry.sizes[size] || 0;
-  const newSizeQty = currentSizeQty + changeQty;
+  const currentSizeQty = Math.max(0, stockEntry.sizes[size] || 0);
+  const rawNewQty = currentSizeQty + changeQty;
+  const newSizeQty = Math.max(0, rawNewQty);
 
-  if (!settings.allowNegativeStock && newSizeQty < 0) {
+  if (changeQty < 0 && Math.abs(changeQty) > currentSizeQty) {
     return {
       success: false,
-      message: `Insufficient stock for ${productName} (${color} - Size ${size}). Available: ${currentSizeQty}, Requested reduction: ${Math.abs(changeQty)}.`
+      message: `Insufficient stock for ${productName} (${color} - Size ${size}). Available stock: ${currentSizeQty} pcs. Cannot reduce stock below 0.`
     };
   }
 
   stockEntry.sizes[size] = newSizeQty;
+  // Ensure all sizes in entry are non-negative
+  Object.keys(stockEntry.sizes).forEach(sz => {
+    stockEntry.sizes[sz] = Math.max(0, stockEntry.sizes[sz] || 0);
+  });
   stockEntry.total = Object.values(stockEntry.sizes).reduce((sum, val) => sum + val, 0);
 
   saveData('STOCK', stockList);

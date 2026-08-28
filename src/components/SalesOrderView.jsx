@@ -138,22 +138,28 @@ export const SalesOrderView = () => {
   };
 
   const handleSizeQtyChange = (itemIdx, sizeKey, val) => {
-    const qty = Math.max(0, parseInt(val) || 0);
+    const qty = val === '' ? 0 : Math.max(0, parseInt(val) || 0);
     setOrderItems(prev => {
       const copy = [...prev];
-      copy[itemIdx].sizeQty = {
-        ...copy[itemIdx].sizeQty,
-        [sizeKey]: qty
+      copy[itemIdx] = {
+        ...copy[itemIdx],
+        sizeQty: {
+          ...copy[itemIdx].sizeQty,
+          [sizeKey]: qty
+        }
       };
       return copy;
     });
   };
 
   const handleRateChange = (itemIdx, val) => {
-    const r = Math.max(0, parseFloat(val) || 0);
+    const r = val === '' ? 0 : Math.max(0, parseFloat(val) || 0);
     setOrderItems(prev => {
       const copy = [...prev];
-      copy[itemIdx].rate = r;
+      copy[itemIdx] = {
+        ...copy[itemIdx],
+        rate: r
+      };
       return copy;
     });
   };
@@ -568,7 +574,9 @@ export const SalesOrderView = () => {
                       ))}
                     </td>
                     <td className="mono" style={{ fontWeight: '800', fontSize: '0.95rem' }}>{order.totalQuantity} Pcs</td>
-                    <td className="mono" style={{ fontWeight: '800', color: 'var(--accent-gold)' }}>₹{order.grandTotal?.toFixed(2)}</td>
+                    <td className="mono" style={{ fontWeight: '800', color: 'var(--accent-gold)' }}>
+                      ₹{(parseFloat(order.grandTotal) || 0).toFixed(2)}
+                    </td>
                     <td>
                       <div style={{ fontSize: '0.75rem', color: '#3fb950' }}>Adv: ₹{order.advanceAmount}</div>
                       <div style={{ fontSize: '0.75rem', color: '#f85149', fontWeight: '700' }}>Bal: ₹{order.balanceAmount}</div>
@@ -743,7 +751,9 @@ export const SalesOrderView = () => {
                           <input 
                             type="number" 
                             style={{ width: '100%' }}
-                            value={item.rate}
+                            value={item.rate === 0 || item.rate === '0' ? '' : item.rate}
+                            placeholder="0"
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => handleRateChange(idx, e.target.value)}
                           />
                         </div>
@@ -758,7 +768,9 @@ export const SalesOrderView = () => {
                               type="number" 
                               min="0"
                               style={{ width: '100%', textAlign: 'center', padding: '4px' }}
-                              value={item.sizeQty[sz]}
+                              value={item.sizeQty[sz] === 0 || item.sizeQty[sz] === '0' ? '' : item.sizeQty[sz]}
+                              placeholder="0"
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => handleSizeQtyChange(idx, sz, e.target.value)}
                             />
                           </div>
@@ -821,8 +833,10 @@ export const SalesOrderView = () => {
                     <input 
                       type="number" 
                       style={{ width: '100%', fontSize: '1.1rem', fontWeight: '800', color: '#3fb950', marginTop: '4px' }}
-                      value={advanceAmount}
-                      onChange={(e) => setAdvanceAmount(e.target.value)}
+                      value={advanceAmount === 0 || advanceAmount === '0' ? '' : advanceAmount}
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setAdvanceAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     />
                     
                     <div style={{ marginTop: '10px' }}>
@@ -953,7 +967,7 @@ export const SalesOrderView = () => {
                       </td>
                       <td style={{ padding: '6px', textAlign: 'center', border: '1px solid #ddd', fontWeight: '700' }}>{it.totalQty} Pcs</td>
                       <td style={{ padding: '6px', textAlign: 'right', border: '1px solid #ddd' }}>₹{it.rate}</td>
-                      <td style={{ padding: '6px', textAlign: 'right', border: '1px solid #ddd', fontWeight: '700' }}>₹{it.amount?.toFixed(2)}</td>
+                      <td style={{ padding: '6px', textAlign: 'right', border: '1px solid #ddd', fontWeight: '700' }}>₹{(parseFloat(it.amount) || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -967,12 +981,12 @@ export const SalesOrderView = () => {
                 </div>
                 <div style={{ textAlign: 'right', minWidth: '260px' }}>
                   <div>Total Quantity: <strong>{selectedOrder.totalQuantity} Pcs</strong></div>
-                  {selectedOrder.grossMRPTotal > 0 && <div>Gross MRP Total: ₹{selectedOrder.grossMRPTotal?.toFixed(2)}</div>}
-                  {selectedOrder.fixedDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Trade Disc ({selectedOrder.fixedDiscountPercent}%): -₹{selectedOrder.totalFixedDisc?.toFixed(2)}</div>}
-                  {selectedOrder.additionalDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Scheme Disc ({selectedOrder.additionalDiscountPercent}%): -₹{selectedOrder.totalAddDisc?.toFixed(2)}</div>}
-                  <div>Grand Total (incl GST): <strong>₹{selectedOrder.grandTotal?.toFixed(2)}</strong></div>
-                  <div style={{ color: '#008000', fontWeight: '700' }}>Advance Received: ₹{selectedOrder.advanceAmount?.toFixed(2)}</div>
-                  <div style={{ color: '#d00000', fontWeight: '900', fontSize: '1rem', marginTop: '4px' }}>Balance Payable: ₹{selectedOrder.balanceAmount?.toFixed(2)}</div>
+                  {selectedOrder.grossMRPTotal > 0 && <div>Gross MRP Total: ₹{(parseFloat(selectedOrder.grossMRPTotal) || 0).toFixed(2)}</div>}
+                  {selectedOrder.fixedDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Trade Disc ({selectedOrder.fixedDiscountPercent}%): -₹{(parseFloat(selectedOrder.totalFixedDisc) || 0).toFixed(2)}</div>}
+                  {selectedOrder.additionalDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Scheme Disc ({selectedOrder.additionalDiscountPercent}%): -₹{(parseFloat(selectedOrder.totalAddDisc) || 0).toFixed(2)}</div>}
+                  <div>Grand Total (incl GST): <strong>₹{(parseFloat(selectedOrder.grandTotal) || 0).toFixed(2)}</strong></div>
+                  <div style={{ color: '#008000', fontWeight: '700' }}>Advance Received: ₹{(parseFloat(selectedOrder.advanceAmount) || 0).toFixed(2)}</div>
+                  <div style={{ color: '#d00000', fontWeight: '900', fontSize: '1rem', marginTop: '4px' }}>Balance Payable: ₹{(parseFloat(selectedOrder.balanceAmount) || 0).toFixed(2)}</div>
                 </div>
               </div>
 

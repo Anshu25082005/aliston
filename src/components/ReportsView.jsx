@@ -324,12 +324,14 @@ export const ReportsView = () => {
             </thead>
             <tbody>
               {expenses.map(e => (
-                <tr key={e.id}>
+                <tr key={e.id || Math.random()}>
                   <td>{e.date}</td>
                   <td><span className="badge badge-gold">{e.category}</span></td>
                   <td>{e.description}</td>
                   <td>{e.paymentMode}</td>
-                  <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>₹{e.amount?.toFixed(2)}</td>
+                  <td className="mono" style={{ fontWeight: '800', color: '#ef4444' }}>
+                    ₹{(parseFloat(e.amount) || 0).toFixed(2)}
+                  </td>
                 </tr>
               ))}
             </tbody>

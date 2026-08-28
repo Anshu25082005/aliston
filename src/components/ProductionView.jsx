@@ -253,8 +253,10 @@ export const ProductionView = () => {
                           type="number" 
                           min="0" 
                           style={{ width: '100%', textAlign: 'center', fontWeight: '700' }} 
-                          value={sizes[sz] || 0}
-                          onChange={(e) => setSizes({ ...sizes, [sz]: parseInt(e.target.value) || 0 })}
+                          value={sizes[sz] === 0 || sizes[sz] === '0' ? '' : sizes[sz]}
+                          placeholder="0"
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => setSizes({ ...sizes, [sz]: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
                         />
                       </div>
                     ))}

@@ -19,7 +19,7 @@
     ]
   },
   "SETTINGS": {
-    "allowNegativeStock": true,
+    "allowNegativeStock": false,
     "minStockThreshold": 10,
     "tallyTheme": "dark",
     "invoiceSeq": 1002
@@ -160,13 +160,13 @@
       "fabric": "Linen Pure 60 Lea",
       "sizes": {
         "S": 0,
-        "M": -1,
-        "L": -1,
-        "XL": -1,
-        "XXL": -1,
-        "XXXL": -1
+        "M": 0,
+        "L": 0,
+        "XL": 0,
+        "XXL": 0,
+        "XXXL": 0
       },
-      "total": -5
+      "total": 0
     }
   ],
   "STOCK_TRANSACTIONS": [

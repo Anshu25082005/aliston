@@ -51,24 +51,26 @@ export const DashboardView = ({ onNavigate, onOpenAddProduct, onOpenAddStock, on
   let totalInventoryValue = 0;
 
   stockList.forEach(s => {
-    totalStock += s.total || 0;
+    const itemTotal = Math.max(0, s.total || 0);
+    totalStock += itemTotal;
     const prod = products.find(p => p.id === s.productId);
     if (prod) {
       if (prod.category && prod.category.includes('Shirt')) {
-        totalShirts += s.total || 0;
+        totalShirts += itemTotal;
       }
       if (prod.category && (prod.category.includes('Trouser') || prod.category.includes('Pant'))) {
-        totalPants += s.total || 0;
+        totalPants += itemTotal;
       }
       if (prod.category && prod.category.includes('Linen Shirt')) {
-        totalLinenShirts += s.total || 0;
+        totalLinenShirts += itemTotal;
       }
-      totalInventoryValue += (s.total || 0) * (prod.costPrice || 0);
+      totalInventoryValue += itemTotal * (prod.costPrice || 0);
 
       // Low stock check by size
       if (s.sizes) {
         Object.entries(s.sizes).forEach(([size, qty]) => {
-          if (qty < (prod.minStockLevel || 10)) {
+          const safeQty = Math.max(0, parseInt(qty) || 0);
+          if (safeQty < (prod.minStockLevel || 10)) {
             lowStockItemsCount++;
           }
         });

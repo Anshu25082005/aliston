@@ -32,7 +32,7 @@ const INITIAL_DB = {
     ]
   },
   SETTINGS: {
-    allowNegativeStock: true,
+    allowNegativeStock: false,
     minStockThreshold: 10,
     tallyTheme: 'dark',
     invoiceSeq: 1001
@@ -91,15 +91,29 @@ const ensureDataDir = () => {
 
 // Read Database
 export const readDB = () => {
+  const sanitizeStock = (dbObj) => {
+    if (dbObj && Array.isArray(dbObj.STOCK)) {
+      dbObj.STOCK.forEach(stockItem => {
+        if (stockItem && stockItem.sizes) {
+          Object.keys(stockItem.sizes).forEach(sz => {
+            stockItem.sizes[sz] = Math.max(0, parseInt(stockItem.sizes[sz]) || 0);
+          });
+          stockItem.total = Object.values(stockItem.sizes).reduce((sum, v) => sum + v, 0);
+        }
+      });
+    }
+    return dbObj;
+  };
+
   if (memoryDb) {
-    return memoryDb;
+    return sanitizeStock(memoryDb);
   }
 
   // 1. Try /tmp/aliston_db.json (Serverless writable cache)
   try {
     if (fs.existsSync(TMP_DB_PATH)) {
       const raw = fs.readFileSync(TMP_DB_PATH, 'utf-8');
-      memoryDb = JSON.parse(raw);
+      memoryDb = sanitizeStock(JSON.parse(raw));
       return memoryDb;
     }
   } catch (e) {
@@ -111,14 +125,14 @@ export const readDB = () => {
     ensureDataDir();
     if (fs.existsSync(DB_FILE_PATH)) {
       const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-      memoryDb = JSON.parse(raw);
+      memoryDb = sanitizeStock(JSON.parse(raw));
       return memoryDb;
     }
   } catch (err) {
     console.error('Error reading server DB:', err);
   }
 
-  memoryDb = INITIAL_DB;
+  memoryDb = sanitizeStock(INITIAL_DB);
   return memoryDb;
 };
 

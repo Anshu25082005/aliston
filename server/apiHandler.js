@@ -16,18 +16,22 @@ export const handleApiRequest = async (req, res) => {
     return;
   }
 
-  // Parse Body for POST/PUT
+  // Parse Body for POST/PUT/DELETE
   let body = {};
-  if (method === 'POST' || method === 'PUT') {
-    try {
-      const buffers = [];
-      for await (const chunk of req) {
-        buffers.push(chunk);
+  if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+    if (req.body !== undefined && req.body !== null) {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } else {
+      try {
+        const buffers = [];
+        for await (const chunk of req) {
+          buffers.push(chunk);
+        }
+        const dataStr = Buffer.concat(buffers).toString('utf-8');
+        if (dataStr) body = JSON.parse(dataStr);
+      } catch (e) {
+        console.error('Error parsing request body:', e);
       }
-      const dataStr = Buffer.concat(buffers).toString('utf-8');
-      if (dataStr) body = JSON.parse(dataStr);
-    } catch (e) {
-      console.error('Error parsing request body:', e);
     }
   }
 
@@ -315,8 +319,8 @@ export const handleApiRequest = async (req, res) => {
     return;
   }
 
-  // 8. Generic Table POST Endpoint `/api/data/:table`
-  if (url.startsWith('/api/data/') && method === 'POST') {
+  // 8. Generic Table POST/DELETE Endpoint `/api/data/:table`
+  if (url.startsWith('/api/data/') && (method === 'POST' || method === 'DELETE')) {
     const tableName = url.replace('/api/data/', '').split('?')[0].toUpperCase();
     const db = readDB();
     db[tableName] = body;

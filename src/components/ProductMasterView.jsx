@@ -230,6 +230,7 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
           <thead>
             <tr>
               <th>Image</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
               <th>Code / SKU</th>
               <th>Product Name</th>
               <th>Category</th>
@@ -238,13 +239,13 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
               <th>Margin %</th>
               <th>Selling Price</th>
               <th>Barcode</th>
-              <th>Actions</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                   No products found matching filters. Click "+ Add Product Master" to create one.
                 </td>
               </tr>
@@ -257,6 +258,16 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                       alt={prod.name} 
                       style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} 
                     />
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(prod)} title="Edit Product">
+                        <Edit size={14} />
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProduct(prod.id)} title="Delete Product" style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{prod.code}</div>
@@ -275,12 +286,12 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                   <td><span className="badge badge-blue">{prod.marginPercent}%</span></td>
                   <td className="mono" style={{ fontWeight: '700', color: '#3fb950' }}>₹{prod.sellingPrice?.toFixed(2)}</td>
                   <td className="mono" style={{ fontSize: '0.775rem' }}>{prod.barcode}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(prod)} title="Edit">
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(prod)} title="Edit Product">
                         <Edit size={14} />
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProduct(prod.id)} title="Delete">
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProduct(prod.id)} title="Delete Product" style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -476,9 +487,26 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save Product Master</button>
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  {editingProduct && (
+                    <button 
+                      type="button" 
+                      className="btn btn-danger" 
+                      onClick={() => {
+                        handleDeleteProduct(editingProduct.id);
+                        setShowModal(false);
+                      }}
+                      style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                    >
+                      <Trash2 size={14} /> Delete Product
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Save Product Master</button>
+                </div>
               </div>
             </form>
           </div>

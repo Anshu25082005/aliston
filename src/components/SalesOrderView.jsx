@@ -102,9 +102,31 @@ export const SalesOrderView = () => {
         ...copy[index],
         productId: prod.id,
         productName: prod.name,
-        fabric: prod.fabric,
+        fabric: `${prod.fabric} (${prod.fabricColor})`,
         color: prod.fabricColor,
         rate: prod.sellingPrice || 950
+      };
+      return copy;
+    });
+  };
+
+  const handleProductNameChange = (index, val) => {
+    setOrderItems(prev => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        productName: val
+      };
+      return copy;
+    });
+  };
+
+  const handleFabricColorChange = (index, val) => {
+    setOrderItems(prev => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        fabric: val
       };
       return copy;
     });
@@ -562,22 +584,44 @@ export const SalesOrderView = () => {
 
                   {orderItems.map((item, idx) => (
                     <div key={idx} className="card" style={{ padding: '12px 14px', marginBottom: '10px', background: 'rgba(255, 255, 255, 0.015)' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', gap: '12px', marginBottom: '10px' }}>
                         <div>
-                          <label style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Select Garment Style</label>
-                          <select 
+                          <label style={{ fontSize: '0.725rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
+                            Garment Style / Item Name (Type Manually)
+                          </label>
+                          <input 
+                            type="text"
+                            list={`products-list-${idx}`}
                             style={{ width: '100%' }}
-                            value={item.productId}
-                            onChange={(e) => handleProductSelect(idx, e.target.value)}
-                          >
+                            value={item.productName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const matchedProd = products.find(p => p.name === val || `${p.name} (${p.code})` === val);
+                              if (matchedProd) {
+                                handleProductSelect(idx, matchedProd.id);
+                              } else {
+                                handleProductNameChange(idx, val);
+                              }
+                            }}
+                            placeholder="Type garment name e.g. Linen Slim Fit Shirt 1008"
+                          />
+                          <datalist id={`products-list-${idx}`}>
                             {products.map(p => (
-                              <option key={p.id} value={p.id}>{p.name} ({p.code}) - {p.fabric}</option>
+                              <option key={p.id} value={`${p.name} (${p.code})`} />
                             ))}
-                          </select>
+                          </datalist>
                         </div>
                         <div>
-                          <label style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Fabric & Color</label>
-                          <input type="text" readOnly style={{ width: '100%', opacity: 0.8 }} value={`${item.fabric} (${item.color})`} />
+                          <label style={{ fontSize: '0.725rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
+                            Fabric & Color (Type Manually)
+                          </label>
+                          <input 
+                            type="text" 
+                            style={{ width: '100%' }} 
+                            value={item.fabric} 
+                            onChange={(e) => handleFabricColorChange(idx, e.target.value)}
+                            placeholder="Type fabric & color e.g. Linen Pure 60 Lea (Royal Blue)"
+                          />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Rate per Piece (₹)</label>

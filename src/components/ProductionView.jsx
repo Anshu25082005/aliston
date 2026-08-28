@@ -19,6 +19,7 @@ export const ProductionView = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingProduction, setEditingProduction] = useState(null);
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
+  const [productName, setProductName] = useState(products[0]?.name || '');
   const [color, setColor] = useState('Royal Blue');
   const [batchNo, setBatchNo] = useState(`BATCH-${new Date().getFullYear()}-01`);
   const [workerTailor, setWorkerTailor] = useState('Master Artisan Tailors (Unit 3)');
@@ -32,6 +33,7 @@ export const ProductionView = () => {
   const handleOpenModal = () => {
     setEditingProduction(null);
     setSelectedProductId(products[0]?.id || '');
+    setProductName(products[0]?.name || '');
     setColor('Royal Blue');
     setBatchNo(`BATCH-${new Date().getFullYear()}-01`);
     setWorkerTailor('Master Artisan Tailors (Unit 3)');
@@ -43,6 +45,7 @@ export const ProductionView = () => {
   const handleEditProduction = (prd) => {
     setEditingProduction(prd);
     setSelectedProductId(prd.productId || products[0]?.id || '');
+    setProductName(prd.productName || products[0]?.name || '');
     setColor(prd.color || '');
     setBatchNo(prd.batchNo || '');
     setWorkerTailor(prd.workerTailor || '');
@@ -219,14 +222,27 @@ export const ProductionView = () => {
                 )}
 
                 <div>
-                  <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Select Product to Manufacture *</label>
-                  <select 
+                  <label style={{ fontSize: '0.775rem', color: 'var(--accent-gold)', fontWeight: '700' }}>Product Name * (Type Manually)</label>
+                  <input 
+                    type="text" 
+                    required 
+                    list="prod-products-datalist"
                     style={{ width: '100%' }}
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                  >
-                    {products.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-                  </select>
+                    value={productName}
+                    placeholder="Type garment/product name e.g. Linen Formal Shirt 1008"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setProductName(val);
+                      const matched = products.find(p => p.name === val || `${p.code} - ${p.name}` === val);
+                      if (matched) {
+                        setSelectedProductId(matched.id);
+                        setProductName(matched.name);
+                      }
+                    }}
+                  />
+                  <datalist id="prod-products-datalist">
+                    {products.map(p => <option key={p.id} value={`${p.code} - ${p.name}`} />)}
+                  </datalist>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

@@ -285,6 +285,7 @@ export const resetToInitialData = async () => {
 // Finished Goods Stock Management
 export const updateFinishedStock = ({
   productId,
+  productName: customProductName,
   color,
   size,
   changeQty,
@@ -297,10 +298,13 @@ export const updateFinishedStock = ({
   const stockList = getData('STOCK') || [];
   const products = getData('PRODUCTS') || [];
   const product = products.find(p => p.id === productId);
-  const productName = product ? product.name : 'Garment Item';
+  const productName = customProductName || (product ? product.name : 'Garment Item');
   const fabric = product ? product.fabric : 'Fabric';
 
-  let stockEntry = stockList.find(s => s.productId === productId && s.color.toLowerCase() === color.toLowerCase());
+  let stockEntry = stockList.find(s => 
+    ((productId && s.productId === productId) || (productName && s.productName && s.productName.toLowerCase() === productName.toLowerCase())) &&
+    (s.color || '').toLowerCase() === (color || '').toLowerCase()
+  );
 
   if (!stockEntry) {
     stockEntry = {

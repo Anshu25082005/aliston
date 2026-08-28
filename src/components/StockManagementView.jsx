@@ -37,6 +37,7 @@ export const StockManagementView = () => {
   const [showModal, setShowModal] = useState(false);
   const [actionType, setActionType] = useState('ADD'); // 'ADD' | 'REMOVE' | 'OPENING' | 'ADJUSTMENT' | 'TRANSFER' | 'RETURN'
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
+  const [selectedProductName, setSelectedProductName] = useState(products[0]?.name || '');
   const [selectedColor, setSelectedColor] = useState('Royal Blue');
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(10);
@@ -46,7 +47,14 @@ export const StockManagementView = () => {
 
   const handleOpenActionModal = (type = 'ADD', prodId = null, color = null, size = 'M') => {
     setActionType(type);
-    if (prodId) setSelectedProductId(prodId);
+    if (prodId) {
+      setSelectedProductId(prodId);
+      const prod = products.find(p => p.id === prodId);
+      if (prod) setSelectedProductName(prod.name);
+    } else {
+      setSelectedProductId(products[0]?.id || '');
+      setSelectedProductName(products[0]?.name || '');
+    }
     if (color) setSelectedColor(color);
     if (size) setSelectedSize(size);
     setQuantity(10);
@@ -60,10 +68,16 @@ export const StockManagementView = () => {
     e.preventDefault();
     setModalFeedback({ type: '', text: '' });
 
+    if (!selectedProductName.trim()) {
+      setModalFeedback({ type: 'error', text: 'Please enter a Product Name' });
+      return;
+    }
+
     const changeQty = (actionType === 'REMOVE' || actionType === 'DAMAGE') ? -Math.abs(quantity) : Math.abs(quantity);
 
     const res = updateFinishedStock({
-      productId: selectedProductId,
+      productId: selectedProductId || 'prod-custom-' + Date.now(),
+      productName: selectedProductName,
       color: selectedColor,
       size: selectedSize,
       changeQty,
@@ -373,14 +387,27 @@ export const StockManagementView = () => {
                 )}
 
                 <div>
-                  <label style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Product *</label>
-                  <select 
+                  <label style={{ fontSize: '0.775rem', color: 'var(--accent-gold)', fontWeight: '700' }}>Product Name * (Type Manually)</label>
+                  <input 
+                    type="text" 
+                    required 
+                    list="stock-products-datalist"
                     style={{ width: '100%' }}
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                  >
-                    {products.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-                  </select>
+                    value={selectedProductName}
+                    placeholder="Type garment/product name e.g. Linen Formal Shirt 1008"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedProductName(val);
+                      const matched = products.find(p => p.name === val || `${p.code} - ${p.name}` === val);
+                      if (matched) {
+                        setSelectedProductId(matched.id);
+                        setSelectedProductName(matched.name);
+                      }
+                    }}
+                  />
+                  <datalist id="stock-products-datalist">
+                    {products.map(p => <option key={p.id} value={`${p.code} - ${p.name}`} />)}
+                  </datalist>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

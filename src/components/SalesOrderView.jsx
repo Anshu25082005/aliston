@@ -61,6 +61,10 @@ export const SalesOrderView = () => {
   const [paymentMode, setPaymentMode] = useState('UPI / Bank Transfer');
   const [gstPercent, setGstPercent] = useState(12);
 
+  // Discount Controls: 1 Fixed (40%) + 1 Additional Scheme (0%, 5%, 10%, 15%, 20%)
+  const [fixedDiscountPercent, setFixedDiscountPercent] = useState(40);
+  const [additionalDiscountPercent, setAdditionalDiscountPercent] = useState(10);
+
   // Form Order Items State
   const [orderItems, setOrderItems] = useState([
     {
@@ -153,14 +157,31 @@ export const SalesOrderView = () => {
     });
   };
 
-  // Calculate totals
+  // Calculate totals with Dual Discount System (Fixed 40% + Additional 0/5/10/15/20%)
   const processedItems = orderItems.map(item => {
     const totalQty = Object.values(item.sizeQty).reduce((a, b) => a + b, 0);
-    const amount = totalQty * item.rate;
-    return { ...item, totalQty, amount };
+    const grossAmount = totalQty * item.rate;
+    const fixedDiscVal = grossAmount * (fixedDiscountPercent / 100);
+    const afterFixed = grossAmount - fixedDiscVal;
+    const addDiscVal = afterFixed * (additionalDiscountPercent / 100);
+    const amount = afterFixed - addDiscVal;
+    const netRate = totalQty > 0 ? amount / totalQty : 0;
+
+    return { 
+      ...item, 
+      totalQty, 
+      grossAmount, 
+      fixedDiscVal, 
+      addDiscVal, 
+      amount, 
+      netRate 
+    };
   });
 
   const grandTotalQty = processedItems.reduce((sum, item) => sum + item.totalQty, 0);
+  const grossMRPTotal = processedItems.reduce((sum, item) => sum + item.grossAmount, 0);
+  const totalFixedDisc = processedItems.reduce((sum, item) => sum + item.fixedDiscVal, 0);
+  const totalAddDisc = processedItems.reduce((sum, item) => sum + item.addDiscVal, 0);
   const subTotalAmount = processedItems.reduce((sum, item) => sum + item.amount, 0);
   const calculatedGst = subTotalAmount * (gstPercent / 100);
   const grandTotalAmount = subTotalAmount + calculatedGst;
@@ -189,6 +210,11 @@ export const SalesOrderView = () => {
       customerCity,
       items: processedItems,
       totalQuantity: grandTotalQty,
+      grossMRPTotal,
+      fixedDiscountPercent,
+      totalFixedDisc,
+      additionalDiscountPercent,
+      totalAddDisc,
       subTotal: subTotalAmount,
       gstPercent,
       gstAmount: calculatedGst,
@@ -662,6 +688,43 @@ export const SalesOrderView = () => {
                   ))}
                 </div>
 
+                {/* Discount Setup Card */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: 'rgba(255, 255, 255, 0.025)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                    <label style={{ fontSize: '0.775rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
+                      Discount 1: Fixed Trade Discount (%)
+                    </label>
+                    <select 
+                      style={{ width: '100%', marginTop: '4px', fontWeight: '700' }}
+                      value={fixedDiscountPercent}
+                      onChange={(e) => setFixedDiscountPercent(parseFloat(e.target.value) || 0)}
+                    >
+                      <option value="40">40% (Fixed Trade Discount)</option>
+                      <option value="0">0% (No Fixed Discount)</option>
+                      <option value="30">30% Trade Discount</option>
+                      <option value="35">35% Trade Discount</option>
+                      <option value="45">45% Trade Discount</option>
+                      <option value="50">50% Trade Discount</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.775rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
+                      Discount 2: Additional Scheme Discount (%)
+                    </label>
+                    <select 
+                      style={{ width: '100%', marginTop: '4px', fontWeight: '700' }}
+                      value={additionalDiscountPercent}
+                      onChange={(e) => setAdditionalDiscountPercent(parseFloat(e.target.value) || 0)}
+                    >
+                      <option value="0">0% (No Extra Discount)</option>
+                      <option value="5">5% Extra Scheme Discount</option>
+                      <option value="10">10% Extra Scheme Discount</option>
+                      <option value="15">15% Extra Scheme Discount</option>
+                      <option value="20">20% Extra Scheme Discount</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* Calculation Summary & Advance */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', background: 'rgba(229, 185, 92, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(229, 185, 92, 0.2)' }}>
                   <div>
@@ -690,7 +753,23 @@ export const SalesOrderView = () => {
                       <strong className="mono">{grandTotalQty} Pcs</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span>Subtotal Amount:</span>
+                      <span>Gross MRP Total:</span>
+                      <span className="mono">₹{grossMRPTotal.toFixed(2)}</span>
+                    </div>
+                    {fixedDiscountPercent > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', color: '#3fb950' }}>
+                        <span>Less Fixed Trade Disc ({fixedDiscountPercent}%):</span>
+                        <span className="mono">-₹{totalFixedDisc.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {additionalDiscountPercent > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', color: '#3fb950' }}>
+                        <span>Less Additional Disc ({additionalDiscountPercent}%):</span>
+                        <span className="mono">-₹{totalAddDisc.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: '700', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>
+                      <span>Net Subtotal Amount:</span>
                       <span className="mono">₹{subTotalAmount.toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
@@ -797,8 +876,11 @@ export const SalesOrderView = () => {
                   <strong>Special Notes:</strong>
                   <div style={{ fontSize: '0.75rem', color: '#555' }}>{selectedOrder.notes}</div>
                 </div>
-                <div style={{ textAlign: 'right', minWidth: '220px' }}>
+                <div style={{ textAlign: 'right', minWidth: '260px' }}>
                   <div>Total Quantity: <strong>{selectedOrder.totalQuantity} Pcs</strong></div>
+                  {selectedOrder.grossMRPTotal > 0 && <div>Gross MRP Total: ₹{selectedOrder.grossMRPTotal?.toFixed(2)}</div>}
+                  {selectedOrder.fixedDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Trade Disc ({selectedOrder.fixedDiscountPercent}%): -₹{selectedOrder.totalFixedDisc?.toFixed(2)}</div>}
+                  {selectedOrder.additionalDiscountPercent > 0 && <div style={{ color: '#008000' }}>Less Scheme Disc ({selectedOrder.additionalDiscountPercent}%): -₹{selectedOrder.totalAddDisc?.toFixed(2)}</div>}
                   <div>Grand Total (incl GST): <strong>₹{selectedOrder.grandTotal?.toFixed(2)}</strong></div>
                   <div style={{ color: '#008000', fontWeight: '700' }}>Advance Received: ₹{selectedOrder.advanceAmount?.toFixed(2)}</div>
                   <div style={{ color: '#d00000', fontWeight: '900', fontSize: '1rem', marginTop: '4px' }}>Balance Payable: ₹{selectedOrder.balanceAmount?.toFixed(2)}</div>

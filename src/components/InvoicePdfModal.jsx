@@ -181,10 +181,25 @@ export const InvoicePdfModal = ({ invoice, companyDetails = INITIAL_COMPANY_DETA
 
             <div style={{ backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span>Subtotal:</span>
-                <span>₹{invoice.subtotal?.toFixed(2)}</span>
+                <span>Gross MRP Subtotal:</span>
+                <span>₹{(invoice.subtotal || (invoice.taxableTotal + (invoice.totalFixedDisc || 0) + (invoice.totalAddDisc || 0)))?.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+
+              {(invoice.totalFixedDisc > 0 || invoice.fixedDiscountPercent > 0) && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#b45309' }}>
+                  <span>Less: Fixed Trade Disc ({invoice.fixedDiscountPercent || 40}%):</span>
+                  <span>-₹{(invoice.totalFixedDisc || 0)?.toFixed(2)}</span>
+                </div>
+              )}
+
+              {(invoice.totalAddDisc > 0 || invoice.additionalDiscountPercent > 0) && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#2563eb' }}>
+                  <span>Less: Additional Disc ({invoice.additionalDiscountPercent || 0}%):</span>
+                  <span>-₹{(invoice.totalAddDisc || 0)?.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontWeight: '700', borderTop: '1px dashed #cbd5e1', paddingTop: '4px' }}>
                 <span>Taxable Amount:</span>
                 <span>₹{invoice.taxableTotal?.toFixed(2)}</span>
               </div>

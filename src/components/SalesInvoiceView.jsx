@@ -59,11 +59,17 @@ export const SalesInvoiceView = () => {
   ]);
 
   const [formFeedback, setFormFeedback] = useState({ type: '', text: '' });
-
   const [editingInvoice, setEditingInvoice] = useState(null);
+
+  // Dual Discount System (1 Fixed 40% + 2nd Additional Option 0/5/10/15/20%)
+  const [fixedDiscountPercent, setFixedDiscountPercent] = useState(40);
+  const [additionalDiscountPercent, setAdditionalDiscountPercent] = useState(10);
 
   const handleOpenCreateModal = () => {
     setEditingInvoice(null);
+    setFixedDiscountPercent(40);
+    setAdditionalDiscountPercent(10);
+
     const freshNextSeq = (settings.invoiceSeq || 1001);
     const freshInvoiceNo = `${companyDetails.invoicePrefix || 'AL/2026-27/'}${String(freshNextSeq).padStart(4, '0')}`;
     const firstCust = customers[0];
@@ -98,6 +104,9 @@ export const SalesInvoiceView = () => {
 
   const handleEditInvoice = (inv) => {
     setEditingInvoice(inv);
+    setFixedDiscountPercent(inv.fixedDiscountPercent !== undefined ? inv.fixedDiscountPercent : 40);
+    setAdditionalDiscountPercent(inv.additionalDiscountPercent !== undefined ? inv.additionalDiscountPercent : 0);
+
     setInvoiceForm({
       invoiceNo: inv.invoiceNo,
       date: inv.date || new Date().toISOString().split('T')[0],
@@ -187,12 +196,25 @@ export const SalesInvoiceView = () => {
     }
   };
 
-  // Calculations for invoice total
+  // Calculations for invoice total with Dual Discount System
   const processedItems = lineItems.map(item => {
     const prod = products.find(p => p.id === item.productId);
-    const discAmount = (item.qty * item.rate) * (item.discountPercent / 100);
-    const taxableAmt = (item.qty * item.rate) - discAmount;
-    const gstAmt = taxableAmt * (item.gstPercent / 100);
+    const grossAmount = (item.qty || 0) * (item.rate || 0);
+
+    // 1. Fixed Discount (e.g., 40%)
+    const fixedDiscVal = grossAmount * ((fixedDiscountPercent || 0) / 100);
+    const afterFixed = grossAmount - fixedDiscVal;
+
+    // 2. Additional Discount (0%, 5%, 10%, 15%, 20%)
+    const addDiscVal = afterFixed * ((additionalDiscountPercent || 0) / 100);
+
+    // Custom item discount override if set
+    const totalDiscVal = item.discountPercent > 0 
+      ? (grossAmount * (item.discountPercent / 100)) 
+      : (fixedDiscVal + addDiscVal);
+
+    const taxableAmt = grossAmount - totalDiscVal;
+    const gstAmt = taxableAmt * ((item.gstPercent || 12) / 100);
     const totalAmt = taxableAmt + gstAmt;
 
     return {
@@ -200,13 +222,19 @@ export const SalesInvoiceView = () => {
       productName: prod ? prod.name : 'Garment Shirt',
       code: prod ? prod.code : 'AL-SH-101',
       hsn: prod ? prod.hsnCode : '620520',
+      grossAmount: parseFloat(grossAmount.toFixed(2)),
+      fixedDiscVal: parseFloat(fixedDiscVal.toFixed(2)),
+      addDiscVal: parseFloat(addDiscVal.toFixed(2)),
+      totalDiscVal: parseFloat(totalDiscVal.toFixed(2)),
       taxableAmt: parseFloat(taxableAmt.toFixed(2)),
       gstAmt: parseFloat(gstAmt.toFixed(2)),
       totalAmt: parseFloat(totalAmt.toFixed(2))
     };
   });
 
-  const subtotal = processedItems.reduce((acc, i) => acc + (i.qty * i.rate), 0);
+  const subtotal = processedItems.reduce((acc, i) => acc + i.grossAmount, 0);
+  const totalFixedDisc = processedItems.reduce((acc, i) => acc + i.fixedDiscVal, 0);
+  const totalAddDisc = processedItems.reduce((acc, i) => acc + i.addDiscVal, 0);
   const taxableTotal = processedItems.reduce((acc, i) => acc + i.taxableAmt, 0);
   const gstTotal = processedItems.reduce((acc, i) => acc + i.gstAmt, 0);
   const rawGrandTotal = taxableTotal + gstTotal;
@@ -236,6 +264,10 @@ export const SalesInvoiceView = () => {
       ...invoiceForm,
       items: processedItems,
       subtotal: parseFloat(subtotal.toFixed(2)),
+      fixedDiscountPercent,
+      totalFixedDisc: parseFloat(totalFixedDisc.toFixed(2)),
+      additionalDiscountPercent,
+      totalAddDisc: parseFloat(totalAddDisc.toFixed(2)),
       taxableTotal: parseFloat(taxableTotal.toFixed(2)),
       cgst: parseFloat(cgst.toFixed(2)),
       sgst: parseFloat(sgst.toFixed(2)),
@@ -448,6 +480,59 @@ export const SalesInvoiceView = () => {
                   </div>
                 </div>
 
+                {/* Dual Discount System Control Panel */}
+                <div style={{
+                  backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1.2fr',
+                  gap: '14px',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-gold)', display: 'block', marginBottom: '4px' }}>
+                      1. Fixed Trade Discount
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fixedDiscountPercent}
+                        onChange={(e) => setFixedDiscountPercent(parseFloat(e.target.value) || 0)}
+                        style={{ width: '80px', fontWeight: '800', textAlign: 'center', padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+                      />
+                      <span style={{ fontWeight: '800', color: 'var(--accent-gold)', fontSize: '0.85rem' }}>% (Fixed)</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#60a5fa', display: 'block', marginBottom: '4px' }}>
+                      2. Additional Festive Discount
+                    </label>
+                    <select
+                      value={additionalDiscountPercent}
+                      onChange={(e) => setAdditionalDiscountPercent(parseFloat(e.target.value) || 0)}
+                      style={{ width: '100%', fontWeight: '700', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: '#ffffff', fontSize: '0.85rem' }}
+                    >
+                      <option value="0">0% Additional Discount</option>
+                      <option value="5">5% Additional Discount</option>
+                      <option value="10">10% Additional Discount</option>
+                      <option value="15">15% Additional Discount</option>
+                      <option value="20">20% Additional Discount</option>
+                    </select>
+                  </div>
+
+                  <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Savings / Discount:</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#3fb950', marginTop: '2px' }}>
+                      -₹{(totalFixedDisc + totalAddDisc).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Product Line Items */}
                 <div className="card" style={{ padding: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -512,7 +597,7 @@ export const SalesInvoiceView = () => {
                           </div>
 
                           <div>
-                            <input type="number" placeholder="Disc %" style={{ width: '100%', fontSize: '0.8rem' }} value={item.discountPercent} onChange={(e) => {
+                            <input type="number" placeholder="Override %" style={{ width: '100%', fontSize: '0.8rem' }} value={item.discountPercent} onChange={(e) => {
                               const val = parseFloat(e.target.value) || 0;
                               setLineItems(lineItems.map((it, i) => i === idx ? { ...it, discountPercent: val } : it));
                             }} />
@@ -534,7 +619,7 @@ export const SalesInvoiceView = () => {
                 </div>
 
                 {/* Bottom summary matrix */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
                   <div>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Payment Mode</label>
                     <select style={{ width: '100%', marginBottom: '10px' }} value={invoiceForm.paymentMode} onChange={(e) => setInvoiceForm({ ...invoiceForm, paymentMode: e.target.value })}>
@@ -552,10 +637,22 @@ export const SalesInvoiceView = () => {
 
                   <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.825rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Subtotal:</span>
+                      <span>Gross MRP Subtotal:</span>
                       <span className="mono">₹{subtotal.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    {totalFixedDisc > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-gold)' }}>
+                        <span>Fixed Disc ({fixedDiscountPercent}%):</span>
+                        <span className="mono">-₹{totalFixedDisc.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {totalAddDisc > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#60a5fa' }}>
+                        <span>Additional Disc ({additionalDiscountPercent}%):</span>
+                        <span className="mono">-₹{totalAddDisc.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>
                       <span>Taxable Total:</span>
                       <span className="mono">₹{taxableTotal.toFixed(2)}</span>
                     </div>

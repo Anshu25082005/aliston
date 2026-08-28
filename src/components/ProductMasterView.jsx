@@ -153,6 +153,7 @@ export const ProductMasterView = ({ searchQuery = '' }) => {
 
   const handleDeleteProduct = (id) => {
     if (confirm('Are you sure you want to deactivate/delete this product master entry?')) {
+      markIdDeleted('PRODUCTS', id);
       const updated = products.filter(p => p.id !== id);
       setProducts(updated);
       saveData('PRODUCTS', updated);

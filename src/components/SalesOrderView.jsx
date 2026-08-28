@@ -326,6 +326,7 @@ export const SalesOrderView = () => {
 
   const handleDeleteOrder = (orderId) => {
     if (confirm('Are you sure you want to delete this sales order booking?')) {
+      markIdDeleted('ORDERS', orderId);
       const updated = orders.filter(o => o.id !== orderId);
       setOrders(updated);
       saveData('ORDERS', updated);

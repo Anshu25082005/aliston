@@ -24,6 +24,7 @@ export const PurchaseView = () => {
 
   const handleDeletePurchase = (id) => {
     if (confirm('Are you sure you want to delete this purchase entry?')) {
+      markIdDeleted('PURCHASES', id);
       const updated = purchases.filter(p => p.id !== id);
       setPurchases(updated);
       saveData('PURCHASES', updated);

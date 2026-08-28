@@ -41,6 +41,33 @@ const STORAGE_KEYS = {
   AUTH: 'aliston_auth_session'
 };
 
+// Helper to manage deleted item IDs persistently per table
+export const getDeletedIds = (key) => {
+  try {
+    const raw = localStorage.getItem(`aliston_deleted_${key.toUpperCase()}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const markIdDeleted = (key, id) => {
+  if (!id) return;
+  const deleted = getDeletedIds(key);
+  if (!deleted.includes(id)) {
+    deleted.push(id);
+    localStorage.setItem(`aliston_deleted_${key.toUpperCase()}`, JSON.stringify(deleted));
+  }
+};
+
+export const clearDeletedIds = (key) => {
+  if (key) {
+    localStorage.removeItem(`aliston_deleted_${key.toUpperCase()}`);
+  } else {
+    Object.keys(STORAGE_KEYS).forEach(k => localStorage.removeItem(`aliston_deleted_${k}`));
+  }
+};
+
 // Sync whole DB from server and notify listeners if data changed
 export const syncWithServerDB = async () => {
   try {
@@ -51,10 +78,21 @@ export const syncWithServerDB = async () => {
         let hasChanges = false;
         Object.keys(db).forEach(key => {
           if (STORAGE_KEYS[key]) {
-            const currentRaw = localStorage.getItem(STORAGE_KEYS[key]);
-            const newRaw = JSON.stringify(db[key]);
+            const tableKey = key.toUpperCase();
+            const currentRaw = localStorage.getItem(STORAGE_KEYS[tableKey]);
+            let serverData = db[key];
+
+            // Filter out deleted IDs from server response so server polling never resurrects deleted items
+            if (Array.isArray(serverData)) {
+              const deletedIds = getDeletedIds(tableKey);
+              if (deletedIds.length > 0) {
+                serverData = serverData.filter(item => item && item.id && !deletedIds.includes(item.id));
+              }
+            }
+
+            const newRaw = JSON.stringify(serverData);
             if (currentRaw !== newRaw) {
-              localStorage.setItem(STORAGE_KEYS[key], newRaw);
+              localStorage.setItem(STORAGE_KEYS[tableKey], newRaw);
               hasChanges = true;
             }
           }
@@ -80,7 +118,15 @@ export const initDB = async () => {
 export const getData = (key) => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS[key.toUpperCase()]);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const deletedIds = getDeletedIds(key);
+      if (deletedIds.length > 0) {
+        return parsed.filter(item => item && item.id && !deletedIds.includes(item.id));
+      }
+    }
+    return parsed;
   } catch (e) {
     console.error(`Error reading ${key}`, e);
     return null;
@@ -90,15 +136,23 @@ export const getData = (key) => {
 export const saveData = async (key, data) => {
   const tableKey = key.toUpperCase();
   try {
+    let cleanData = data;
+    if (Array.isArray(data)) {
+      const deletedIds = getDeletedIds(tableKey);
+      if (deletedIds.length > 0) {
+        cleanData = data.filter(item => item && item.id && !deletedIds.includes(item.id));
+      }
+    }
+
     // 1. Update local cache for instant UI response
-    localStorage.setItem(STORAGE_KEYS[tableKey], JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEYS[tableKey], JSON.stringify(cleanData));
     window.dispatchEvent(new CustomEvent('aliston-db-updated', { detail: { key } }));
 
     // 2. Sync to Server DB
     fetch(`/api/data/${tableKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     }).catch(err => console.warn(`Failed to sync ${key} to server:`, err));
   } catch (e) {
     console.error(`Error saving ${key}`, e);

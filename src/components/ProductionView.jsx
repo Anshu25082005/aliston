@@ -53,6 +53,7 @@ export const ProductionView = () => {
 
   const handleDeleteProduction = (id) => {
     if (confirm('Are you sure you want to delete this production record?')) {
+      markIdDeleted('PRODUCTIONS', id);
       const updated = productions.filter(p => p.id !== id);
       setProductions(updated);
       saveData('PRODUCTIONS', updated);

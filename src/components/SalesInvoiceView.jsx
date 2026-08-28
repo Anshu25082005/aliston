@@ -118,6 +118,7 @@ export const SalesInvoiceView = () => {
 
   const handleDeleteInvoice = (invoiceId) => {
     if (confirm('Are you sure you want to permanently delete this sales invoice?')) {
+      markIdDeleted('INVOICES', invoiceId);
       const updated = invoices.filter(i => i.id !== invoiceId);
       setInvoices(updated);
       saveData('INVOICES', updated);

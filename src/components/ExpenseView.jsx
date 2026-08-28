@@ -85,6 +85,7 @@ export const ExpenseView = () => {
 
   const handleDeleteExpense = (id) => {
     if (confirm('Are you sure you want to delete this expense record?')) {
+      markIdDeleted('EXPENSES', id);
       const updated = expenses.filter(e => e.id !== id);
       setExpenses(updated);
       saveData('EXPENSES', updated);

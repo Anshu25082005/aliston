@@ -86,6 +86,7 @@ export const MaterialInventoryView = () => {
 
   const handleDeleteMaterial = (id) => {
     if (confirm('Are you sure you want to delete this raw material item?')) {
+      markIdDeleted('MATERIALS', id);
       const updated = materials.filter(m => m.id !== id);
       setMaterials(updated);
       saveData('MATERIALS', updated);

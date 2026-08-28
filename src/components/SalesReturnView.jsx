@@ -52,6 +52,7 @@ export const SalesReturnView = () => {
 
   const handleDeleteReturn = (id) => {
     if (confirm('Are you sure you want to delete this sales return entry?')) {
+      markIdDeleted('RETURNS', id);
       const updated = returns.filter(r => r.id !== id);
       setReturns(updated);
       saveData('RETURNS', updated);

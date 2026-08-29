@@ -1,4 +1,4 @@
-﻿import { Redis } from "@upstash/redis";
+﻿import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -12,7 +12,6 @@ let memoryDb = null;
 let memoryDbTimestamp = 0;
 const CACHE_TTL_MS = 5000; // 5 second cache
 
-// Default initial database state
 export const INITIAL_DB = {
   COMPANY: {
     name: "ALISTON MEN'S WEAR",
@@ -52,19 +51,22 @@ export const INITIAL_DB = {
   INVOICES: [], RETURNS: [], EXPENSES: [], ORDERS: [], FABRIC_DISPATCHES: []
 };
 
-// ── Redis client (lazy init) ──────────────────────────────────────────────────
-let redis = null;
-const getRedis = () => {
-  if (!redis && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN
+// ── AWS S3 client (lazy init) ──────────────────────────────────────────────────
+let s3Client = null;
+const getS3 = () => {
+  if (!s3Client && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.AWS_S3_BUCKET_NAME) {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+      }
     });
   }
-  return redis;
+  return s3Client;
 };
 
-const REDIS_KEY = "aliston_erp_db_v2";
+const S3_FILE_KEY = "aliston_erp_db.json";
 
 // ── sanitize stock (no negatives) ─────────────────────────────────────────────
 const sanitizeStock = (db) => {
@@ -83,28 +85,32 @@ const sanitizeStock = (db) => {
 
 // ── READ ──────────────────────────────────────────────────────────────────────
 export const readDB = async () => {
-  // 1. Return memory cache if fresh
   if (memoryDb && Date.now() - memoryDbTimestamp < CACHE_TTL_MS) {
     return sanitizeStock(memoryDb);
   }
 
-  // 2. Try Upstash Redis (persistent cloud storage)
-  const r = getRedis();
-  if (r) {
+  const s3 = getS3();
+  if (s3) {
     try {
-      const data = await r.get(REDIS_KEY);
-      if (data) {
-        const db = typeof data === "string" ? JSON.parse(data) : data;
+      const response = await s3.send(new GetObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Key: S3_FILE_KEY
+      }));
+      const str = await response.Body.transformToString();
+      if (str) {
+        const db = JSON.parse(str);
         memoryDb = { ...INITIAL_DB, ...db };
         memoryDbTimestamp = Date.now();
         return sanitizeStock(memoryDb);
       }
     } catch (e) {
-      console.error("Redis read error:", e.message);
+      if (e.name !== 'NoSuchKey') {
+        console.error("AWS S3 read error:", e.message);
+      }
     }
   }
 
-  // 3. Fallback: try local disk db.json
+  // Fallback: try local disk db.json
   try {
     if (fs.existsSync(DB_FILE_PATH)) {
       const raw = fs.readFileSync(DB_FILE_PATH, "utf-8");
@@ -114,7 +120,6 @@ export const readDB = async () => {
     }
   } catch (e) {}
 
-  // 4. Return initial DB
   memoryDb = JSON.parse(JSON.stringify(INITIAL_DB));
   memoryDbTimestamp = Date.now();
   return sanitizeStock(memoryDb);
@@ -125,18 +130,22 @@ export const writeDB = async (data) => {
   memoryDb = data;
   memoryDbTimestamp = Date.now();
 
-  // 1. Write to Upstash Redis (persistent)
-  const r = getRedis();
-  if (r) {
+  const s3 = getS3();
+  if (s3) {
     try {
-      await r.set(REDIS_KEY, JSON.stringify(data));
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Key: S3_FILE_KEY,
+        Body: JSON.stringify(data),
+        ContentType: 'application/json'
+      }));
       return;
     } catch (e) {
-      console.error("Redis write error:", e.message);
+      console.error("AWS S3 write error:", e.message);
     }
   }
 
-  // 2. Fallback: write to disk
+  // Fallback: write to disk
   try {
     const dir = path.join(__dirname, "data");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -150,10 +159,15 @@ export const resetDB = async () => {
   memoryDb = fresh;
   memoryDbTimestamp = Date.now();
 
-  const r = getRedis();
-  if (r) {
+  const s3 = getS3();
+  if (s3) {
     try {
-      await r.set(REDIS_KEY, JSON.stringify(fresh));
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Key: S3_FILE_KEY,
+        Body: JSON.stringify(fresh),
+        ContentType: 'application/json'
+      }));
     } catch (e) {}
   }
   return fresh;

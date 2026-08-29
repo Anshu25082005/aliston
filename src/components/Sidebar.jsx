@@ -13,7 +13,8 @@ import {
   BarChart3, 
   Settings,
   Layers,
-  ShoppingCart
+  ShoppingCart,
+  Receipt
 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab, lowStockCount = 0 }) => {
@@ -29,6 +30,7 @@ export const Sidebar = ({ activeTab, setActiveTab, lowStockCount = 0 }) => {
     { id: 'sales-orders', label: 'Sales Orders', icon: ShoppingCart, shortcut: 'F8.5' },
     { id: 'returns', label: 'Sales Returns', icon: RotateCcw, shortcut: 'F9' },
     { id: 'expenses', label: 'Expenses', icon: DollarSign, shortcut: 'F10' },
+    { id: 'gst', label: 'GST Ledger', icon: Receipt, shortcut: 'G' },
     { id: 'reports', label: 'Reports Hub', icon: BarChart3, shortcut: 'F11' },
     { id: 'settings', label: 'Settings & Backup', icon: Settings, shortcut: 'F12' }
   ];

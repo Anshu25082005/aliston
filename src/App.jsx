@@ -17,6 +17,7 @@ import { SalesOrderView } from './components/SalesOrderView';
 import { SalesReturnView } from './components/SalesReturnView';
 import { ExpenseView } from './components/ExpenseView';
 import { ReportsView } from './components/ReportsView';
+import { GSTLedgerView } from './components/GSTLedgerView';
 import { BarcodeModal } from './components/BarcodeModal';
 import { BackupSettingsView } from './components/BackupSettingsView';
 import { AlertOctagon, RefreshCw } from 'lucide-react';
@@ -286,6 +287,10 @@ export default function App() {
 
             {activeTab === 'reports' && (
               <ReportsView />
+            )}
+
+            {activeTab === 'gst' && (
+              <GSTLedgerView />
             )}
 
             {activeTab === 'settings' && (

@@ -38,6 +38,7 @@ const STORAGE_KEYS = {
   RETURNS: 'aliston_returns',
   EXPENSES: 'aliston_expenses',
   ORDERS: 'aliston_orders',
+  FABRIC_DISPATCHES: 'aliston_fabric_dispatches',
   AUTH: 'aliston_auth_session'
 };
 

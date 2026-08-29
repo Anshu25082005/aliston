@@ -1,16 +1,10 @@
-﻿import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import fs from "fs";
+﻿import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE_PATH = path.join(__dirname, "data", "db.json");
-
-// Memory cache for within-request reuse
-let memoryDb = null;
-let memoryDbTimestamp = 0;
-const CACHE_TTL_MS = 5000; // 5 second cache
 
 export const INITIAL_DB = {
   COMPANY: {
@@ -51,24 +45,6 @@ export const INITIAL_DB = {
   INVOICES: [], RETURNS: [], EXPENSES: [], ORDERS: [], FABRIC_DISPATCHES: []
 };
 
-// ── AWS S3 client (lazy init) ──────────────────────────────────────────────────
-let s3Client = null;
-const getS3 = () => {
-  if (!s3Client && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.AWS_S3_BUCKET_NAME) {
-    s3Client = new S3Client({
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-      }
-    });
-  }
-  return s3Client;
-};
-
-const S3_FILE_KEY = "aliston_erp_db.json";
-
-// ── sanitize stock (no negatives) ─────────────────────────────────────────────
 const sanitizeStock = (db) => {
   if (db && Array.isArray(db.STOCK)) {
     db.STOCK.forEach(s => {
@@ -83,92 +59,34 @@ const sanitizeStock = (db) => {
   return db;
 };
 
-// ── READ ──────────────────────────────────────────────────────────────────────
+// ── LOCAL LAPTOP READ ─────────────────────────────────────────────────────────
 export const readDB = async () => {
-  if (memoryDb && Date.now() - memoryDbTimestamp < CACHE_TTL_MS) {
-    return sanitizeStock(memoryDb);
-  }
-
-  const s3 = getS3();
-  if (s3) {
-    try {
-      const response = await s3.send(new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: S3_FILE_KEY
-      }));
-      const str = await response.Body.transformToString();
-      if (str) {
-        const db = JSON.parse(str);
-        memoryDb = { ...INITIAL_DB, ...db };
-        memoryDbTimestamp = Date.now();
-        return sanitizeStock(memoryDb);
-      }
-    } catch (e) {
-      if (e.name !== 'NoSuchKey') {
-        console.error("AWS S3 read error:", e.message);
-      }
-    }
-  }
-
-  // Fallback: try local disk db.json
   try {
     if (fs.existsSync(DB_FILE_PATH)) {
       const raw = fs.readFileSync(DB_FILE_PATH, "utf-8");
-      memoryDb = { ...INITIAL_DB, ...JSON.parse(raw) };
-      memoryDbTimestamp = Date.now();
-      return sanitizeStock(memoryDb);
+      const db = JSON.parse(raw);
+      return sanitizeStock({ ...INITIAL_DB, ...db });
     }
-  } catch (e) {}
-
-  memoryDb = JSON.parse(JSON.stringify(INITIAL_DB));
-  memoryDbTimestamp = Date.now();
-  return sanitizeStock(memoryDb);
+  } catch (e) {
+    console.error("Local DB read error:", e);
+  }
+  return sanitizeStock(JSON.parse(JSON.stringify(INITIAL_DB)));
 };
 
-// ── WRITE ─────────────────────────────────────────────────────────────────────
+// ── LOCAL LAPTOP WRITE ────────────────────────────────────────────────────────
 export const writeDB = async (data) => {
-  memoryDb = data;
-  memoryDbTimestamp = Date.now();
-
-  const s3 = getS3();
-  if (s3) {
-    try {
-      await s3.send(new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: S3_FILE_KEY,
-        Body: JSON.stringify(data),
-        ContentType: 'application/json'
-      }));
-      return;
-    } catch (e) {
-      console.error("AWS S3 write error:", e.message);
-    }
-  }
-
-  // Fallback: write to disk
   try {
     const dir = path.join(__dirname, "data");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
-  } catch (e) {}
+  } catch (e) {
+    console.error("Local DB write error:", e);
+  }
 };
 
-// ── RESET ─────────────────────────────────────────────────────────────────────
+// ── LOCAL LAPTOP RESET ────────────────────────────────────────────────────────
 export const resetDB = async () => {
   const fresh = JSON.parse(JSON.stringify(INITIAL_DB));
-  memoryDb = fresh;
-  memoryDbTimestamp = Date.now();
-
-  const s3 = getS3();
-  if (s3) {
-    try {
-      await s3.send(new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: S3_FILE_KEY,
-        Body: JSON.stringify(fresh),
-        ContentType: 'application/json'
-      }));
-    } catch (e) {}
-  }
+  await writeDB(fresh);
   return fresh;
 };

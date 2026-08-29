@@ -1,17 +1,19 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+﻿import { Redis } from "@upstash/redis";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE_PATH = path.join(__dirname, 'data', 'db.json');
-const TMP_DB_PATH = path.join('/tmp', 'aliston_db.json');
+const DB_FILE_PATH = path.join(__dirname, "data", "db.json");
 
-// Memory DB cache for Vercel serverless functions
+// Memory cache for within-request reuse
 let memoryDb = null;
+let memoryDbTimestamp = 0;
+const CACHE_TTL_MS = 5000; // 5 second cache
 
 // Default initial database state
-const INITIAL_DB = {
+export const INITIAL_DB = {
   COMPANY: {
     name: "ALISTON MEN'S WEAR",
     legalName: "Shree Ram Enterprise (ALISTON)",
@@ -31,134 +33,128 @@ const INITIAL_DB = {
       "3. Subject to Surat Jurisdiction only."
     ]
   },
-  SETTINGS: {
-    allowNegativeStock: false,
-    minStockThreshold: 10,
-    tallyTheme: 'dark',
-    invoiceSeq: 1001
-  },
+  SETTINGS: { allowNegativeStock: false, minStockThreshold: 10, tallyTheme: "dark", invoiceSeq: 1001 },
   USERS: [
-    {
-      id: 'user-1',
-      email: 'studioaliston@gmail.com',
-      password: 'pdmmay2026',
-      name: 'Aliston Studio Admin',
-      role: 'Administrator'
-    },
-    {
-      id: 'user-2',
-      email: 'studioaliston2@gmail.com',
-      password: 'pdmmay2026',
-      name: 'Aliston Studio Admin 2',
-      role: 'Administrator'
-    }
+    { id: "user-1", email: "studioaliston@gmail.com", password: "pdmmay2026", name: "Aliston Studio Admin", role: "Administrator" },
+    { id: "user-2", email: "studioaliston2@gmail.com", password: "pdmmay2026", name: "Aliston Studio Admin 2", role: "Administrator" }
   ],
   CATEGORIES: [
-    { id: 'cat-1', name: 'Formal Shirt', code: 'FSH' },
-    { id: 'cat-2', name: 'Casual Shirt', code: 'CSH' },
-    { id: 'cat-3', name: 'Linen Shirt', code: 'LSH' },
-    { id: 'cat-4', name: 'Cotton Shirt', code: 'CTN' },
-    { id: 'cat-5', name: 'Giza Cotton Shirt', code: 'GZA' },
-    { id: 'cat-6', name: 'Trouser/Pant', code: 'TRS' },
-    { id: 'cat-7', name: 'Other', code: 'OTH' }
+    { id: "cat-1", name: "Formal Shirt", code: "FSH" },
+    { id: "cat-2", name: "Casual Shirt", code: "CSH" },
+    { id: "cat-3", name: "Linen Shirt", code: "LSH" },
+    { id: "cat-4", name: "Cotton Shirt", code: "CTN" },
+    { id: "cat-5", name: "Giza Cotton Shirt", code: "GZA" },
+    { id: "cat-6", name: "Trouser/Pant", code: "TRS" },
+    { id: "cat-7", name: "Other", code: "OTH" }
   ],
-  SUPPLIERS: [],
-  CUSTOMERS: [],
-  MATERIALS: [],
-  PRODUCTS: [],
-  BOMS: {},
-  STOCK: [],
-  STOCK_TRANSACTIONS: [],
-  PURCHASES: [],
-  PRODUCTIONS: [],
-  INVOICES: [],
-  RETURNS: [],
-  EXPENSES: [],
-  ORDERS: []
+  SUPPLIERS: [], CUSTOMERS: [], MATERIALS: [], PRODUCTS: [], BOMS: {},
+  STOCK: [], STOCK_TRANSACTIONS: [], PURCHASES: [], PRODUCTIONS: [],
+  INVOICES: [], RETURNS: [], EXPENSES: [], ORDERS: [], FABRIC_DISPATCHES: []
 };
 
-// Ensure data directory exists
-const ensureDataDir = () => {
-  try {
-    const dir = path.join(__dirname, 'data');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  } catch (e) {
-    // Read-only on serverless
+// ── Redis client (lazy init) ──────────────────────────────────────────────────
+let redis = null;
+const getRedis = () => {
+  if (!redis && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN
+    });
   }
+  return redis;
 };
 
-// Read Database
-export const readDB = () => {
-  const sanitizeStock = (dbObj) => {
-    if (dbObj && Array.isArray(dbObj.STOCK)) {
-      dbObj.STOCK.forEach(stockItem => {
-        if (stockItem && stockItem.sizes) {
-          Object.keys(stockItem.sizes).forEach(sz => {
-            stockItem.sizes[sz] = Math.max(0, parseInt(stockItem.sizes[sz]) || 0);
-          });
-          stockItem.total = Object.values(stockItem.sizes).reduce((sum, v) => sum + v, 0);
-        }
-      });
-    }
-    return dbObj;
-  };
+const REDIS_KEY = "aliston_erp_db_v2";
 
-  if (memoryDb) {
+// ── sanitize stock (no negatives) ─────────────────────────────────────────────
+const sanitizeStock = (db) => {
+  if (db && Array.isArray(db.STOCK)) {
+    db.STOCK.forEach(s => {
+      if (s && s.sizes) {
+        Object.keys(s.sizes).forEach(sz => {
+          s.sizes[sz] = Math.max(0, parseInt(s.sizes[sz]) || 0);
+        });
+        s.total = Object.values(s.sizes).reduce((sum, v) => sum + v, 0);
+      }
+    });
+  }
+  return db;
+};
+
+// ── READ ──────────────────────────────────────────────────────────────────────
+export const readDB = async () => {
+  // 1. Return memory cache if fresh
+  if (memoryDb && Date.now() - memoryDbTimestamp < CACHE_TTL_MS) {
     return sanitizeStock(memoryDb);
   }
 
-  // 1. Try /tmp/aliston_db.json (Serverless writable cache)
-  try {
-    if (fs.existsSync(TMP_DB_PATH)) {
-      const raw = fs.readFileSync(TMP_DB_PATH, 'utf-8');
-      memoryDb = sanitizeStock(JSON.parse(raw));
-      return memoryDb;
+  // 2. Try Upstash Redis (persistent cloud storage)
+  const r = getRedis();
+  if (r) {
+    try {
+      const data = await r.get(REDIS_KEY);
+      if (data) {
+        const db = typeof data === "string" ? JSON.parse(data) : data;
+        memoryDb = { ...INITIAL_DB, ...db };
+        memoryDbTimestamp = Date.now();
+        return sanitizeStock(memoryDb);
+      }
+    } catch (e) {
+      console.error("Redis read error:", e.message);
     }
-  } catch (e) {
-    // Ignore error
   }
 
-  // 2. Try disk db.json
+  // 3. Fallback: try local disk db.json
   try {
-    ensureDataDir();
     if (fs.existsSync(DB_FILE_PATH)) {
-      const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-      memoryDb = sanitizeStock(JSON.parse(raw));
-      return memoryDb;
+      const raw = fs.readFileSync(DB_FILE_PATH, "utf-8");
+      memoryDb = { ...INITIAL_DB, ...JSON.parse(raw) };
+      memoryDbTimestamp = Date.now();
+      return sanitizeStock(memoryDb);
     }
-  } catch (err) {
-    console.error('Error reading server DB:', err);
-  }
+  } catch (e) {}
 
-  memoryDb = sanitizeStock(INITIAL_DB);
-  return memoryDb;
+  // 4. Return initial DB
+  memoryDb = JSON.parse(JSON.stringify(INITIAL_DB));
+  memoryDbTimestamp = Date.now();
+  return sanitizeStock(memoryDb);
 };
 
-// Write Database
-export const writeDB = (data) => {
+// ── WRITE ─────────────────────────────────────────────────────────────────────
+export const writeDB = async (data) => {
   memoryDb = data;
-  
-  // 1. Write to /tmp/aliston_db.json
-  try {
-    fs.writeFileSync(TMP_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    // Ignore error
+  memoryDbTimestamp = Date.now();
+
+  // 1. Write to Upstash Redis (persistent)
+  const r = getRedis();
+  if (r) {
+    try {
+      await r.set(REDIS_KEY, JSON.stringify(data));
+      return;
+    } catch (e) {
+      console.error("Redis write error:", e.message);
+    }
   }
 
-  // 2. Write to disk db.json if writable
+  // 2. Fallback: write to disk
   try {
-    ensureDataDir();
-    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    // Expected on Vercel read-only filesystem
-  }
+    const dir = path.join(__dirname, "data");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {}
 };
 
-// Reset Database
-export const resetDB = () => {
-  memoryDb = INITIAL_DB;
-  writeDB(INITIAL_DB);
-  return INITIAL_DB;
+// ── RESET ─────────────────────────────────────────────────────────────────────
+export const resetDB = async () => {
+  const fresh = JSON.parse(JSON.stringify(INITIAL_DB));
+  memoryDb = fresh;
+  memoryDbTimestamp = Date.now();
+
+  const r = getRedis();
+  if (r) {
+    try {
+      await r.set(REDIS_KEY, JSON.stringify(fresh));
+    } catch (e) {}
+  }
+  return fresh;
 };
